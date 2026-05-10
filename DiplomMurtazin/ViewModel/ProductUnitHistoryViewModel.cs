@@ -1,3 +1,4 @@
+using DiplomMurtazin.Core;
 using System;
 using System.Collections.ObjectModel;
 using System.Data.SqlClient;
@@ -106,7 +107,7 @@ namespace DiplomMurtazin.ViewModel
             using (var context = new KPMurtazinEntities())
             {
                 var units = context.Database.SqlQuery<SoldUnitItem>(@"
-SELECT UnitID, ProductID, @ProductName AS ProductName, SoldDate, ReturnEndDate, WarrantyEndDate, ISNULL(si.UnitPrice, 0) AS UnitPrice, SaleID, SaleItemID, Status
+SELECT pu.UnitID, pu.ProductID, @ProductName AS ProductName, pu.SoldDate, pu.ReturnEndDate, pu.WarrantyEndDate, ISNULL(si.UnitPrice, 0) AS UnitPrice, pu.SaleID, pu.SaleItemID, pu.Status
 FROM dbo.ProductUnits pu
 LEFT JOIN dbo.SaleItems si ON si.SaleItemID = pu.SaleItemID
 WHERE pu.ProductID = @ProductID

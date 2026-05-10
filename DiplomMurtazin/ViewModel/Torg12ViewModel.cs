@@ -4,6 +4,7 @@ using DiplomMurtazin.View;
 using Microsoft.Win32;
 using System;
 using System.Collections.ObjectModel;
+using System.Diagnostics;
 using System.IO;
 using System.Linq;
 using System.Text;
@@ -420,6 +421,14 @@ VALUES (@tid, @pid, @qty, @price);";
                     Basis,
                     rows
                 );
+                try
+                {
+                    Process.Start(new ProcessStartInfo(dialog.FileName) { UseShellExecute = true });
+                }
+                catch
+                {
+                    // Не блокируем экспорт, если внешний Excel недоступен.
+                }
 
                 // После экспорта: списываем остатки и фиксируем движение.
                 using (var context = new KPMurtazinEntities())
@@ -535,25 +544,22 @@ VALUES (@tid, @pid, @qty, @price);";
                         }
                         else
                         {
-                            int defaultCategoryId = context.Categories.Select(c => c.CategoryID).FirstOrDefault();
-                            if (defaultCategoryId <= 0)
+                            product = CreateProductViaEditWindow(name, barcode, row.UnitPrice, context);
+                            if (product == null)
                             {
-                                throw new Exception("Не найдена категория для автоматического создания товара.");
+                                const string insertMissing = @"
+INSERT INTO dbo.Torg12ImportMissingItems (Torg12ID, TempProductName, TempBarcode, Quantity, UnitPrice, Status)
+VALUES (@tid, @name, @barcode, @qty, @price, N'Pending');";
+                                context.Database.ExecuteSqlCommand(
+                                    insertMissing,
+                                    new System.Data.SqlClient.SqlParameter("@tid", torgId),
+                                    new System.Data.SqlClient.SqlParameter("@name", (object)name ?? DBNull.Value),
+                                    new System.Data.SqlClient.SqlParameter("@barcode", (object)barcode ?? DBNull.Value),
+                                    new System.Data.SqlClient.SqlParameter("@qty", row.Quantity),
+                                    new System.Data.SqlClient.SqlParameter("@price", row.UnitPrice)
+                                );
+                                continue;
                             }
-
-                            product = new Products
-                            {
-                                ProductName = string.IsNullOrWhiteSpace(name) ? $"Товар {DateTime.Now:yyyyMMddHHmmss}" : name,
-                                Barcode = string.IsNullOrWhiteSpace(barcode) ? Guid.NewGuid().ToString("N").Substring(0, 12) : barcode,
-                                CategoryID = defaultCategoryId,
-                                Manufacturer = "Не указан",
-                                UnitPrice = row.UnitPrice > 0 ? row.UnitPrice : 0.01m,
-                                WarrantyMonths = 12,
-                                MinStockLevel = 1
-                            };
-                            context.Products.Add(product);
-                            context.SaveChanges();
-                            AuditLogger.Log("CREATE", "Product", $"Автосоздание товара из импорта ТОРГ-12: '{product.ProductName}'", product.ProductID.ToString());
 
                             const string insertItem = @"
 INSERT INTO dbo.Torg12Items (Torg12ID, ProductID, Quantity, UnitPrice)
@@ -697,6 +703,34 @@ VALUES (@tid, @pid, @qty, @price);",
         {
             StatusMessage = message;
             StatusColor = isError ? "#e74c3c" : "#3498db";
+        }
+
+        private Products CreateProductViaEditWindow(string name, string barcode, decimal unitPrice, KPMurtazinEntities context)
+        {
+            var prefill = new Products
+            {
+                ProductName = string.IsNullOrWhiteSpace(name) ? "Новый товар" : name,
+                Barcode = barcode ?? string.Empty,
+                UnitPrice = unitPrice > 0 ? unitPrice : 1,
+                WarrantyMonths = 12,
+                MinStockLevel = 1,
+                CategoryID = 1
+            };
+
+            var wnd = new ProductEditWindow(prefill)
+            {
+                Owner = Application.Current.Windows.OfType<Window>().FirstOrDefault(w => w is MainWindow)
+            };
+            if (wnd.ShowDialog() != true)
+            {
+                return null;
+            }
+
+            var created = wnd.GetProduct();
+            context.Products.Add(created);
+            context.SaveChanges();
+            AuditLogger.Log("CREATE", "Product", $"Создан товар через импорт ТОРГ-12: '{created.ProductName}'", created.ProductID.ToString());
+            return created;
         }
 
         private void ShowTorg12Receipt()

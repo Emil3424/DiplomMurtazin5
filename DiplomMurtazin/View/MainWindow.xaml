@@ -95,11 +95,6 @@
                          CommandParameter="Notifications"
                          Style="{StaticResource NavButtonStyle}"/>
 
-                    <RadioButton Content=" Возвраты и гарантия" 
-                         Command="{Binding NavigateCommand}"
-                         CommandParameter="ReturnsWarranty"
-                         Style="{StaticResource NavButtonStyle}"/>
-
                 <RadioButton Content=" Оформление возврата" 
              Command="{Binding NavigateCommand}"
              CommandParameter="ReturnProcessing"

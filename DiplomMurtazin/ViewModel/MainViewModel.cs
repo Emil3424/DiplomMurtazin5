@@ -112,11 +112,6 @@ namespace DiplomMurtazin.ViewModel
                     IsSalesSelected = false;
                     IsProductsSelected = false;
                     break;
-                case "ReturnsWarranty":
-                    _mainFrame.Navigate(new ReturnsWarrantyPage());
-                    IsSalesSelected = false;
-                    IsProductsSelected = false;
-                    break;
                 case "ReturnProcessing":
                     _mainFrame.Navigate(new ReturnProcessingPage());
                     IsSalesSelected = false;
