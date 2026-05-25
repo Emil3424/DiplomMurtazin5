@@ -104,6 +104,11 @@
              Command="{Binding NavigateCommand}"
              CommandParameter="ProductUnitHistory"
              Style="{StaticResource NavButtonStyle}"/>
+                    
+                    <RadioButton Content="Дешборд"
+                                 Command="{Binding NavigateCommand}"
+                                 CommandParameter="Dashbord"
+                                 Style="{StaticResource NavButtonStyle}"/>
 
                     <Separator Background="#7f8c8d" Margin="10"/>
 

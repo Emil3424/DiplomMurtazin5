@@ -51,58 +51,25 @@ namespace DiplomMurtazin.Core
                     DocumentDate = DateTime.Today
                 };
 
-                var used = ws.UsedRange;
-
-                int rows = used.Rows.Count;
-                int cols = used.Columns.Count;
-
-                int headerRow = -1;
-                int nameCol = -1;
-
-                // ищем "Наименование"
-                for (int r = 1; r <= rows; r++)
-                {
-                    for (int c = 1; c <= cols; c++)
-                    {
-                        var val = GetCell(used, r, c);
-                        if (val == null) continue;
-
-                        string s = val.ToString();
-
-                        if (s.IndexOf("Наименование", StringComparison.OrdinalIgnoreCase) >= 0)
-                        {
-                            headerRow = r;
-                            nameCol = c;
-                            break;
-                        }
-                    }
-                    if (headerRow != -1) break;
-                }
-
-                if (headerRow == -1)
-                    throw new Exception("Не найдена таблица (Наименование)");
-
-                int qtyCol = nameCol + 1;
-                int priceCol = nameCol + 2;
-
-                int row = headerRow + 1;
+                int row = 31;
 
                 while (true)
                 {
-                    var nameVal = GetCell(ws, row, nameCol);
-                    if (nameVal == null) break;
+                    string name = Convert.ToString(GetCell(ws, row, 4))?.Trim();
+                    string barcode = Convert.ToString(GetCell(ws, row, 20))?.Trim();
 
-                    string name = nameVal.ToString().Trim();
-                    if (string.IsNullOrWhiteSpace(name)) break;
+                    if (string.IsNullOrWhiteSpace(name))
+                        break;
 
-                    int qty = ToInt(GetCell(ws, row, qtyCol));
-                    decimal price = ToDecimal(GetCell(ws, row, priceCol));
+                    int qty = ToInt(GetCell(ws, row, 39));
+                    decimal price = ToDecimal(GetCell(ws, row, 60));
 
                     if (qty > 0)
                     {
                         result.Rows.Add(new Torg12ExcelRow
                         {
                             ProductName = name,
+                            Barcode = barcode,
                             Quantity = qty,
                             UnitPrice = price
                         });
@@ -129,7 +96,6 @@ namespace DiplomMurtazin.Core
             }
         }
 
-        // ================= helpers =================
 
         private static object GetCell(object sheet, int r, int c)
         {

@@ -123,6 +123,12 @@ namespace DiplomMurtazin.ViewModel
                     IsProductsSelected = false;
                     break;
 
+                   case  "Dashbord":
+                    _mainFrame.Navigate(new DashboardPage());
+                    IsSalesSelected = false;
+                    IsProductsSelected = false;
+                    break;
+
             }
         }
 
