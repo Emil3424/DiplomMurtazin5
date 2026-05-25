@@ -3,13 +3,17 @@ using DiplomMurtazin.Model;
 using DiplomMurtazin.View;
 using Microsoft.Win32;
 using System;
+using System.Collections.Generic;
 using System.Collections.ObjectModel;
+using System.Data.SqlClient;
 using System.Diagnostics;
 using System.IO;
 using System.Linq;
 using System.Text;
+using System.Threading.Tasks;
 using System.Windows;
 using System.Windows.Input;
+using System.Windows.Media;
 
 namespace DiplomMurtazin.ViewModel
 {
@@ -54,6 +58,8 @@ namespace DiplomMurtazin.ViewModel
         private ObservableCollection<Products> _filteredProducts = new ObservableCollection<Products>();
         private Products _selectedProduct;
         private string _searchText;
+        private int _lastImportedTorg12Id;
+        private List<int> _lastImportedProductIds = new List<int>();
 
         private ObservableCollection<Torg12LineItem> _items = new ObservableCollection<Torg12LineItem>();
         private Torg12LineItem _selectedItem;
@@ -169,6 +175,8 @@ namespace DiplomMurtazin.ViewModel
         public ICommand SaveDraftCommand { get; }
         public ICommand ExportTorg12Command { get; }
         public ICommand ImportTorg12Command { get; }
+
+        public ICommand CancelImportCommand { get; }
         public ICommand CreateProductFromMissingCommand { get; }
 
         public Torg12ViewModel()
@@ -179,7 +187,8 @@ namespace DiplomMurtazin.ViewModel
             ClearCommand = new RelayCommand(_ => Clear());
             SaveDraftCommand = new RelayCommand(_ => SaveDraft(), _ => Items.Any());
             ExportTorg12Command = new RelayCommand(_ => ExportTorg12(), _ => Items.Any());
-            ImportTorg12Command = new RelayCommand(_ => ImportTorg12());
+            ImportTorg12Command = new RelayCommand(_ => ImportTorg12(_));
+            CancelImportCommand = new RelayCommand(_ => CancelImport(), _ => _lastImportedTorg12Id > 0);
             CreateProductFromMissingCommand = new RelayCommand(_ => CreateProductFromMissing(), _ => SelectedMissingItem != null);
 
             DocumentNumber = $"ТОРГ12-{DateTime.Now:yyyyMMddHHmmss}";
@@ -254,7 +263,124 @@ ORDER BY CreatedDate ASC";
                 return 0;
             }
         }
+        private ImportPreviewData PrepareImportPreview(string filePath)
+        {
+            var data = Torg12ExcelInteropService.Import(filePath);
+            var preview = new ImportPreviewData
+            {
+                DocumentNumber = data.DocumentNumber ?? $"ТОРГ12-{DateTime.Now:yyyyMMddHHmmss}",
+                DocumentDate = data.DocumentDate,
+                ReceiverName = data.ReceiverName ?? "Получатель",
+                ReceiverAddress = data.ReceiverAddress,
+                Basis = data.Basis
+            };
 
+            using (var context = new KPMurtazinEntities())
+            {
+                foreach (var row in data.Rows)
+                {
+                    var barcode = (row.Barcode ?? "").Trim();
+                    var name = (row.ProductName ?? "").Trim();
+
+                    var product = !string.IsNullOrWhiteSpace(barcode)
+                        ? context.Products.FirstOrDefault(p => p.Barcode == barcode)
+                        : null;
+
+                    if (product == null && !string.IsNullOrWhiteSpace(name))
+                        product = context.Products.FirstOrDefault(p => p.ProductName == name);
+
+                    var previewRow = new ImportPreviewRow
+                    {
+                        ProductName = name,
+                        Barcode = barcode,
+                        Quantity = row.Quantity,
+                        UnitPrice = row.UnitPrice <= 0 ? (product?.UnitPrice ?? 0) : row.UnitPrice,
+                        Status = product != null ? "✅ Найден" : "❌ Требуется создание",
+                        StatusColor = product != null ? System.Windows.Media.Brushes.Green : System.Windows.Media.Brushes.Red
+                    };
+                    preview.Rows.Add(previewRow);
+                }
+            }
+            return preview;
+        }
+
+        private void RollbackImport(int torg12Id, List<int> createdProductIds)
+        {
+            try
+            {
+                using (var context = new KPMurtazinEntities())
+                {
+                    // Удаляем созданные товары
+                    foreach (var pid in createdProductIds)
+                    {
+                        var product = context.Products.Find(pid);
+                        if (product != null)
+                            context.Products.Remove(product);
+                    }
+
+                    // Удаляем документ (каскадно удалит Torg12Items)
+                    var doc = context.Torg12Documents.Find(torg12Id);
+                    if (doc != null)
+                        context.Torg12Documents.Remove(doc);
+
+                    context.SaveChanges();
+                    AuditLogger.Log("ROLLBACK", "TORG12", $"Откат импорта ТОРГ-12 ID={torg12Id}, удалено товаров: {createdProductIds.Count}");
+                }
+            }
+            catch (Exception ex)
+            {
+                SetStatus($"Ошибка отката: {ex.Message}", true);
+            }
+        }
+        private async Task<Products> CreateProductViaEditWindowAsync(string name, string barcode, decimal unitPrice)
+        {
+            var prefill = new Products
+            {
+                ProductName = string.IsNullOrWhiteSpace(name) ? "Новый товар" : name,
+                Barcode = barcode ?? string.Empty,
+                UnitPrice = unitPrice > 0 ? unitPrice : 1,
+                WarrantyMonths = 12,
+                MinStockLevel = 1,
+                CategoryID = 1
+            };
+
+            var tcs = new TaskCompletionSource<Products>();
+            Application.Current.Dispatcher.Invoke(() =>
+            {
+                var wnd = new ProductEditWindow(prefill);
+                wnd.Owner = Application.Current.Windows.OfType<Window>().FirstOrDefault(w => w is MainWindow);
+                if (wnd.ShowDialog() == true)
+                {
+                    tcs.SetResult(wnd.GetProduct());
+                }
+                else
+                {
+                    tcs.SetResult(null);
+                }
+            });
+            return await tcs.Task;
+        }
+
+        // Метод для отмены/очистки после импорта
+        public void CancelImport()
+        {
+            if (_lastImportedTorg12Id == 0)
+            {
+                SetStatus("Нет активного импорта для отмены", true);
+                return;
+            }
+
+            var result = MessageBox.Show("Отменить последний импорт? Все добавленные товары будут удалены.",
+                "Подтверждение отмены", MessageBoxButton.YesNo, MessageBoxImage.Question);
+            if (result != MessageBoxResult.Yes) return;
+
+            RollbackImport(_lastImportedTorg12Id, _lastImportedProductIds);
+            _lastImportedTorg12Id = 0;
+            _lastImportedProductIds.Clear();
+            LoadProducts();
+            LoadMissingItems();
+            SetStatus("Импорт отменён. Данные восстановлены.", false);
+        }
         private void AddSelectedProduct()
         {
             if (SelectedProduct == null) return;
@@ -473,14 +599,13 @@ VALUES (@tid, @pid, @qty, @price);";
             }
         }
 
-        private void ImportTorg12()
+        private void ImportTorg12(object parameter)
         {
             var dialog = new OpenFileDialog
             {
-                Filter = "Excel files (*.xls)|*.xls",
+                Filter = "Excel files (*.xls;*.xlsx)|*.xls;*.xlsx",
                 Title = "Импорт ТОРГ-12"
             };
-
             if (dialog.ShowDialog() != true)
             {
                 SetStatus("Импорт отменен", false);
@@ -489,12 +614,25 @@ VALUES (@tid, @pid, @qty, @price);";
 
             try
             {
-                var data = Torg12ExcelInteropService.Import(dialog.FileName);
+                // 1. Предпросмотр
+                var preview = PrepareImportPreview(dialog.FileName);
+                var previewWindow = new ImportPreviewWindow(preview);
+                previewWindow.Owner = Application.Current.Windows.OfType<Window>().FirstOrDefault(w => w is MainWindow);
+                previewWindow.ShowDialog();
 
-                // Create draft doc in DB immediately (so it survives crashes)
+                if (!previewWindow.ImportConfirmed)
+                {
+                    SetStatus("Импорт отменен пользователем", false);
+                    return;
+                }
+
+                // 2. Выполняем импорт
                 int torgId;
+                var createdProductIds = new List<int>();
+
                 using (var context = new KPMurtazinEntities())
                 {
+                    // Создаём документ
                     const string insertDoc = @"
 INSERT INTO dbo.Torg12Documents (DocumentNumber, DocumentDate, ReceiverName, ReceiverAddress, Basis, CreatedByUserID, CreatedByEmployeeID, Status, Notes)
 VALUES (@num, @date, @recv, @addr, @basis, @uid, @eid, N'Draft', N'Импорт из Excel');
@@ -505,17 +643,17 @@ SELECT CAST(SCOPE_IDENTITY() AS INT);";
 
                     torgId = context.Database.SqlQuery<int>(
                         insertDoc,
-                        new System.Data.SqlClient.SqlParameter("@num", (object)data.DocumentNumber ?? DocumentNumber),
-                        new System.Data.SqlClient.SqlParameter("@date", data.DocumentDate),
-                        new System.Data.SqlClient.SqlParameter("@recv", (object)data.ReceiverName ?? "Получатель"),
-                        new System.Data.SqlClient.SqlParameter("@addr", (object)data.ReceiverAddress ?? DBNull.Value),
-                        new System.Data.SqlClient.SqlParameter("@basis", (object)data.Basis ?? DBNull.Value),
+                        new System.Data.SqlClient.SqlParameter("@num", preview.DocumentNumber),
+                        new System.Data.SqlClient.SqlParameter("@date", preview.DocumentDate),
+                        new System.Data.SqlClient.SqlParameter("@recv", preview.ReceiverName),
+                        new System.Data.SqlClient.SqlParameter("@addr", (object)preview.ReceiverAddress ?? DBNull.Value),
+                        new System.Data.SqlClient.SqlParameter("@basis", (object)preview.Basis ?? DBNull.Value),
                         new System.Data.SqlClient.SqlParameter("@uid", (object)uid ?? DBNull.Value),
                         new System.Data.SqlClient.SqlParameter("@eid", (object)eid ?? DBNull.Value)
                     ).First();
 
-                    // First add existing products
-                    foreach (var row in data.Rows)
+                    // Обрабатываем строки
+                    foreach (var row in preview.Rows)
                     {
                         var barcode = (row.Barcode ?? "").Trim();
                         var name = (row.ProductName ?? "").Trim();
@@ -525,70 +663,55 @@ SELECT CAST(SCOPE_IDENTITY() AS INT);";
                             : null;
 
                         if (product == null && !string.IsNullOrWhiteSpace(name))
-                        {
                             product = context.Products.FirstOrDefault(p => p.ProductName == name);
-                        }
 
-                        if (product != null)
+                        if (product == null)
                         {
-                            const string insertItem = @"
-INSERT INTO dbo.Torg12Items (Torg12ID, ProductID, Quantity, UnitPrice)
-VALUES (@tid, @pid, @qty, @price);";
-                            context.Database.ExecuteSqlCommand(
-                                insertItem,
-                                new System.Data.SqlClient.SqlParameter("@tid", torgId),
-                                new System.Data.SqlClient.SqlParameter("@pid", product.ProductID),
-                                new System.Data.SqlClient.SqlParameter("@qty", row.Quantity),
-                                new System.Data.SqlClient.SqlParameter("@price", row.UnitPrice <= 0 ? product.UnitPrice : row.UnitPrice)
-                            );
-                        }
-                        else
-                        {
-                            product = CreateProductViaEditWindow(name, barcode, row.UnitPrice, context);
-                            if (product == null)
+                            // Требуется создать товар – показываем окно
+                            var newProduct = CreateProductViaEditWindow(name, barcode, row.UnitPrice);
+                            if (newProduct == null)
                             {
-                                const string insertMissing = @"
-INSERT INTO dbo.Torg12ImportMissingItems (Torg12ID, TempProductName, TempBarcode, Quantity, UnitPrice, Status)
-VALUES (@tid, @name, @barcode, @qty, @price, N'Pending');";
-                                context.Database.ExecuteSqlCommand(
-                                    insertMissing,
-                                    new System.Data.SqlClient.SqlParameter("@tid", torgId),
-                                    new System.Data.SqlClient.SqlParameter("@name", (object)name ?? DBNull.Value),
-                                    new System.Data.SqlClient.SqlParameter("@barcode", (object)barcode ?? DBNull.Value),
-                                    new System.Data.SqlClient.SqlParameter("@qty", row.Quantity),
-                                    new System.Data.SqlClient.SqlParameter("@price", row.UnitPrice)
-                                );
-                                continue;
+                                // Пользователь отменил создание – rollback
+                                RollbackImport(torgId, createdProductIds);
+                                SetStatus("Импорт прерван: не удалось создать товар", true);
+                                return;
                             }
 
-                            const string insertItem = @"
-INSERT INTO dbo.Torg12Items (Torg12ID, ProductID, Quantity, UnitPrice)
-VALUES (@tid, @pid, @qty, @price);";
-                            context.Database.ExecuteSqlCommand(
-                                insertItem,
-                                new System.Data.SqlClient.SqlParameter("@tid", torgId),
-                                new System.Data.SqlClient.SqlParameter("@pid", product.ProductID),
-                                new System.Data.SqlClient.SqlParameter("@qty", row.Quantity),
-                                new System.Data.SqlClient.SqlParameter("@price", row.UnitPrice <= 0 ? product.UnitPrice : row.UnitPrice)
-                            );
+                            context.Products.Add(newProduct);
+                            context.SaveChanges();
+                            createdProductIds.Add(newProduct.ProductID);
+                            product = newProduct;
                         }
 
-                        // При импорте делаем приход остатков.
-                        var stockRow = context.StockBalances.FirstOrDefault(sb => sb.ProductID == product.ProductID);
-                        if (stockRow == null)
+                        // Добавляем товар в документ
+                        const string insertItem = @"
+INSERT INTO dbo.Torg12Items (Torg12ID, ProductID, Quantity, UnitPrice)
+VALUES (@tid, @pid, @qty, @price);";
+                        context.Database.ExecuteSqlCommand(
+                            insertItem,
+                            new System.Data.SqlClient.SqlParameter("@tid", torgId),
+                            new System.Data.SqlClient.SqlParameter("@pid", product.ProductID),
+                            new System.Data.SqlClient.SqlParameter("@qty", row.Quantity),
+                            new System.Data.SqlClient.SqlParameter("@price", row.UnitPrice <= 0 ? product.UnitPrice : row.UnitPrice)
+                        );
+
+                        // Обновляем остатки
+                        var stock = context.StockBalances.FirstOrDefault(sb => sb.ProductID == product.ProductID);
+                        if (stock == null)
                         {
-                            stockRow = new StockBalances
+                            stock = new StockBalances
                             {
                                 ProductID = product.ProductID,
                                 ZoneID = 1,
                                 Quantity = 0,
                                 LastUpdated = DateTime.Now
                             };
-                            context.StockBalances.Add(stockRow);
+                            context.StockBalances.Add(stock);
                         }
-                        stockRow.Quantity += row.Quantity;
-                        stockRow.LastUpdated = DateTime.Now;
+                        stock.Quantity += row.Quantity;
+                        stock.LastUpdated = DateTime.Now;
 
+                        // История движения
                         context.ProductMovementHistory.Add(new ProductMovementHistory
                         {
                             ProductID = product.ProductID,
@@ -603,12 +726,16 @@ VALUES (@tid, @pid, @qty, @price);";
                     context.SaveChanges();
                 }
 
-                // Load into current UI from DB (existing items only)
-                DocumentNumber = data.DocumentNumber ?? DocumentNumber;
-                DocumentDate = data.DocumentDate;
-                ReceiverName = data.ReceiverName;
-                ReceiverAddress = data.ReceiverAddress;
-                Basis = data.Basis;
+                // Сохраняем ID для возможного rollback
+                _lastImportedTorg12Id = torgId;
+                _lastImportedProductIds = createdProductIds;
+
+                // Обновляем UI
+                DocumentNumber = preview.DocumentNumber;
+                DocumentDate = preview.DocumentDate;
+                ReceiverName = preview.ReceiverName;
+                ReceiverAddress = preview.ReceiverAddress;
+                Basis = preview.Basis;
 
                 Items.Clear();
                 using (var context = new KPMurtazinEntities())
@@ -622,13 +749,12 @@ WHERE ti.Torg12ID = @tid",
 
                     foreach (var it in items)
                     {
-                        int pid = it.ProductID;
                         Items.Add(new Torg12LineItem
                         {
-                            ProductID = pid,
+                            ProductID = it.ProductID,
                             ProductName = it.ProductName,
                             Barcode = it.Barcode,
-                            AvailableStock = GetAvailableStock(pid),
+                            AvailableStock = GetAvailableStock(it.ProductID),
                             Quantity = it.Quantity,
                             UnitPrice = it.UnitPrice
                         });
@@ -636,13 +762,15 @@ WHERE ti.Torg12ID = @tid",
                 }
 
                 LoadMissingItems();
-                AuditLogger.Log("IMPORT", "TORG12", $"Импортирован ТОРГ-12 из Excel (черновик ID={torgId})", torgId.ToString(), $"Missing={MissingItems.Count}");
-                SetStatus($"Импорт выполнен. Требуют создания товаров: {MissingItems.Count}", MissingItems.Count > 0);
+                AuditLogger.Log("IMPORT", "TORG12", $"Импортирован ТОРГ-12 из Excel (ID={torgId})", torgId.ToString(), $"Missing={MissingItems.Count}");
+                SetStatus($"Импорт выполнен. Создано новых товаров: {createdProductIds.Count}", false);
             }
             catch (Exception ex)
             {
                 SetStatus($"Ошибка импорта: {ex.Message}", true);
-                Console.WriteLine(ex.ToString());
+                // При ошибке пробуем откатить
+                if (_lastImportedTorg12Id > 0)
+                    RollbackImport(_lastImportedTorg12Id, _lastImportedProductIds);
             }
         }
 
@@ -705,7 +833,7 @@ VALUES (@tid, @pid, @qty, @price);",
             StatusColor = isError ? "#e74c3c" : "#3498db";
         }
 
-        private Products CreateProductViaEditWindow(string name, string barcode, decimal unitPrice, KPMurtazinEntities context)
+        private Products CreateProductViaEditWindow(string name, string barcode, decimal unitPrice)
         {
             var prefill = new Products
             {
@@ -717,20 +845,11 @@ VALUES (@tid, @pid, @qty, @price);",
                 CategoryID = 1
             };
 
-            var wnd = new ProductEditWindow(prefill)
-            {
-                Owner = Application.Current.Windows.OfType<Window>().FirstOrDefault(w => w is MainWindow)
-            };
-            if (wnd.ShowDialog() != true)
-            {
-                return null;
-            }
-
-            var created = wnd.GetProduct();
-            context.Products.Add(created);
-            context.SaveChanges();
-            AuditLogger.Log("CREATE", "Product", $"Создан товар через импорт ТОРГ-12: '{created.ProductName}'", created.ProductID.ToString());
-            return created;
+            var wnd = new ProductEditWindow(prefill);
+            wnd.Owner = Application.Current.Windows.OfType<Window>().FirstOrDefault(w => w is MainWindow);
+            if (wnd.ShowDialog() == true)
+                return wnd.GetProduct();
+            return null;
         }
 
         private void ShowTorg12Receipt()

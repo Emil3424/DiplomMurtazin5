@@ -131,6 +131,7 @@
                                     Command="{Binding ClearCommand}"
                                     Background="#95a5a6"
                                     Foreground="White"/>
+                            
                         </StackPanel>
 
                         <DataGrid ItemsSource="{Binding Items}"
@@ -189,6 +190,11 @@
                                 Command="{Binding CreateProductFromMissingCommand}"
                                 Background="#8e44ad"
                                 Foreground="White"/>
+                        <Button Content="Отменить импорт" 
+                                Height="32"
+                                Margin="0,8,0,0"
+                                Command="{Binding CancelImportCommand}"
+                                Background="#e74c3c" Foreground="White"/>
                     </StackPanel>
                 </Border>
 
