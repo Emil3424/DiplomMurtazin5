@@ -1,6 +1,6 @@
-using DiplomMurtazin.ViewModel;
 using System.Windows;
 using System.Windows.Controls;
+using DiplomMurtazin.ViewModel;
 
 namespace DiplomMurtazin.View
 {
@@ -26,4 +26,3 @@ namespace DiplomMurtazin.View
         }
     }
 }
-
