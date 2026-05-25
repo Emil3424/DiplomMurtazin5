@@ -5,7 +5,6 @@ namespace DiplomMurtazin.Model
     public partial class Products : INotifyPropertyChanged
     {
         private int _stockQuantity;
-
         public int StockQuantity
         {
             get => _stockQuantity;

@@ -47,97 +47,56 @@
                     Cursor="Hand"/>
         </StackPanel>
 
-        <!-- Панель поиска и фильтрации -->
-        <Border Grid.Row="1" 
-        Background="White" 
-        Padding="15" 
-        CornerRadius="5" 
-        Margin="0,0,0,20"
-        BorderBrush="#bdc3c7"
-        BorderThickness="1">
-
-            <Grid>
-                <Grid.ColumnDefinitions>
-                    <ColumnDefinition Width="2*"/>
-                    <ColumnDefinition Width="*"/>
-                    <ColumnDefinition Width="Auto"/>
-                </Grid.ColumnDefinitions>
-
-                <!-- Поиск по названию -->
-                <StackPanel Grid.Column="0" Orientation="Horizontal" Margin="0,0,20,0">
-                    <TextBlock Text="Поиск:" 
-                       FontSize="14" 
-                       FontWeight="SemiBold"
-                       VerticalAlignment="Center"
-                       Margin="0,0,10,0"/>
-
-                    <TextBox Width="300" 
-                     Height="35"
-                     Text="{Binding SearchText, UpdateSourceTrigger=PropertyChanged, Delay=500}"
-                     Padding="10,5"
-                     BorderBrush="#3498db"
-                     BorderThickness="1">
-                        <TextBox.Template>
-                            <ControlTemplate TargetType="TextBox">
-                                <Border CornerRadius="5" 
-                                Background="White" 
-                                BorderBrush="{TemplateBinding BorderBrush}" 
-                                BorderThickness="{TemplateBinding BorderThickness}">
-                                    <Grid>
-                                        <ScrollViewer x:Name="PART_ContentHost" Margin="10,0"/>
-                                        <TextBlock x:Name="PlaceholderText" 
-                                          Text="Введите название товара..." 
-                                          Foreground="#95a5a6" 
-                                          IsHitTestVisible="False"
-                                          Margin="10,0"
-                                          VerticalAlignment="Center"
-                                          Visibility="Collapsed"/>
-                                    </Grid>
-                                </Border>
-                                <ControlTemplate.Triggers>
-                                    <Trigger Property="Text" Value="">
-                                        <Setter TargetName="PlaceholderText" Property="Visibility" Value="Visible"/>
-                                    </Trigger>
-                                    <Trigger Property="IsFocused" Value="True">
-                                        <Setter TargetName="PlaceholderText" Property="Visibility" Value="Collapsed"/>
-                                    </Trigger>
-                                </ControlTemplate.Triggers>
-                            </ControlTemplate>
-                        </TextBox.Template>
-                    </TextBox>
-                </StackPanel>
-
-                <!-- Фильтр по категории -->
-                <StackPanel Grid.Column="1" Orientation="Horizontal">
-                    <TextBlock Text="Категория:" 
-                       FontSize="14" 
-                       FontWeight="SemiBold"
-                       VerticalAlignment="Center"
-                       Margin="0,0,10,0"/>
-
-                    <ComboBox Width="200" 
-                      Height="35"
-                      ItemsSource="{Binding Categories}"
-                      SelectedItem="{Binding SelectedCategoryFilter}">
-                        <ComboBox.ItemTemplate>
-                            <DataTemplate>
-                                <TextBlock Text="{Binding CategoryName}" FontSize="14"/>
-                            </DataTemplate>
-                        </ComboBox.ItemTemplate>
-                    </ComboBox>
-                </StackPanel>
-
-                <!-- Кнопка сброса фильтров -->
-                <Button Grid.Column="2" 
-                Content="Сбросить" 
-                Width="100" 
-                Height="35"
-                Margin="20,0,0,0"
-                Command="{Binding ResetFiltersCommand}"
-                Background="#95a5a6" 
-                Foreground="White"
-                Cursor="Hand"/>
-            </Grid>
+        <!-- ProductsPage.xaml – фрагмент панели фильтров -->
+        <Border Grid.Row="1" Background="White" Padding="15" CornerRadius="5" Margin="0,0,0,20"
+        BorderBrush="#bdc3c7" BorderThickness="1">
+            <StackPanel>
+                <Grid Margin="0,0,0,10">
+                    <Grid.ColumnDefinitions>
+                        <ColumnDefinition Width="2*"/>
+                        <ColumnDefinition Width="*"/>
+                        <ColumnDefinition Width="*"/>
+                        <ColumnDefinition Width="Auto"/>
+                    </Grid.ColumnDefinitions>
+                    <TextBox Grid.Column="0" Height="35" Text="{Binding SearchText, UpdateSourceTrigger=PropertyChanged, Delay=500}"
+                     Padding="10,5" BorderBrush="#3498db" BorderThickness="1"
+                     ToolTip="Поиск по названию, штрих-коду, бренду, артикулу"/>
+                    <ComboBox Grid.Column="1" Height="35" Margin="10,0,0,0"
+                      ItemsSource="{Binding Categories}" SelectedItem="{Binding SelectedCategoryFilter}"
+                      DisplayMemberPath="CategoryName"/>
+                    <ComboBox Grid.Column="2" Height="35" Margin="10,0,0,0"
+                      ItemsSource="{Binding Brands}" SelectedItem="{Binding SelectedBrandFilter}"/>
+                    <Button Grid.Column="3" Content="Сбросить" Width="80" Height="35" Margin="10,0,0,0"
+                    Command="{Binding ResetFiltersCommand}" Background="#95a5a6" Foreground="White"/>
+                </Grid>
+                <Grid>
+                    <Grid.ColumnDefinitions>
+                        <ColumnDefinition Width="*"/>
+                        <ColumnDefinition Width="*"/>
+                        <ColumnDefinition Width="*"/>
+                        <ColumnDefinition Width="*"/>
+                        <ColumnDefinition Width="Auto"/>
+                    </Grid.ColumnDefinitions>
+                    <StackPanel Grid.Column="0" Orientation="Horizontal" Margin="0,0,10,0">
+                        <TextBlock Text="Цена от:" VerticalAlignment="Center" Margin="0,0,5,0"/>
+                        <TextBox Width="80" Height="30" Text="{Binding MinPrice, UpdateSourceTrigger=PropertyChanged}"/>
+                    </StackPanel>
+                    <StackPanel Grid.Column="1" Orientation="Horizontal" Margin="0,0,10,0">
+                        <TextBlock Text="до:" VerticalAlignment="Center" Margin="0,0,5,0"/>
+                        <TextBox Width="80" Height="30" Text="{Binding MaxPrice, UpdateSourceTrigger=PropertyChanged}"/>
+                    </StackPanel>
+                    <ComboBox Grid.Column="2" Height="30" Margin="0,0,10,0"
+                      ItemsSource="{Binding SortOptions}" SelectedItem="{Binding SelectedSortOption}"
+                      DisplayMemberPath="Name"/>
+                    <ComboBox Grid.Column="3" Height="30" ItemsSource="{Binding AvailabilityOptions}"
+                      SelectedItem="{Binding AvailabilityFilter}"/>
+                    <StackPanel Grid.Column="4" Orientation="Horizontal">
+                        <Button Content="История цены" Width="110" Height="35" Margin="5,0,0,0"
+                        Command="{Binding ShowPriceHistoryCommand}" Background="#8e44ad" Foreground="White"/>
+                        
+                    </StackPanel>
+                </Grid>
+            </StackPanel>
         </Border>
 
         <!-- DataGrid -->

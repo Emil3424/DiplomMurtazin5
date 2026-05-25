@@ -1,9 +1,13 @@
 ﻿using DiplomMurtazin.Core;
 using DiplomMurtazin.View;
+using Microsoft.Win32;
 using System;
+using System.Collections.Generic;
 using System.Collections.ObjectModel;
 using System.Data.Entity;
+using System.IO;
 using System.Linq;
+using System.Text;
 using System.Windows;
 using System.Windows.Input;
 
@@ -15,9 +19,17 @@ namespace DiplomMurtazin.ViewModel
         private ObservableCollection<Products> _allProducts;
         private ObservableCollection<Products> _filteredProducts;
         private ObservableCollection<Categories> _categories;
+        private ObservableCollection<string> _brands;
+        private ObservableCollection<string> _availabilityOptions;
         private Products _selectedProduct;
         private Categories _selectedCategoryFilter;
+        private string _selectedBrandFilter;
+        private decimal? _minPrice;
+        private decimal? _maxPrice;
+        private string _availabilityFilter = "Все";
         private string _searchText;
+        private SortOption _selectedSortOption;
+        private ObservableCollection<SortOption> _sortOptions;
         private string _statusMessage;
         private string _statusColor;
         private int _totalCount;
@@ -35,6 +47,18 @@ namespace DiplomMurtazin.ViewModel
             set => Set(ref _categories, value);
         }
 
+        public ObservableCollection<string> Brands
+        {
+            get => _brands;
+            set => Set(ref _brands, value);
+        }
+
+        public ObservableCollection<string> AvailabilityOptions
+        {
+            get => _availabilityOptions;
+            set => Set(ref _availabilityOptions, value);
+        }
+
         public Products SelectedProduct
         {
             get => _selectedProduct;
@@ -47,9 +71,47 @@ namespace DiplomMurtazin.ViewModel
             set
             {
                 if (Set(ref _selectedCategoryFilter, value))
-                {
                     ApplyFilters();
-                }
+            }
+        }
+
+        public string SelectedBrandFilter
+        {
+            get => _selectedBrandFilter;
+            set
+            {
+                if (Set(ref _selectedBrandFilter, value))
+                    ApplyFilters();
+            }
+        }
+
+        public decimal? MinPrice
+        {
+            get => _minPrice;
+            set
+            {
+                if (Set(ref _minPrice, value))
+                    ApplyFilters();
+            }
+        }
+
+        public decimal? MaxPrice
+        {
+            get => _maxPrice;
+            set
+            {
+                if (Set(ref _maxPrice, value))
+                    ApplyFilters();
+            }
+        }
+
+        public string AvailabilityFilter
+        {
+            get => _availabilityFilter;
+            set
+            {
+                if (Set(ref _availabilityFilter, value))
+                    ApplyFilters();
             }
         }
 
@@ -59,10 +121,24 @@ namespace DiplomMurtazin.ViewModel
             set
             {
                 if (Set(ref _searchText, value))
-                {
                     ApplyFilters();
-                }
             }
+        }
+
+        public SortOption SelectedSortOption
+        {
+            get => _selectedSortOption;
+            set
+            {
+                if (Set(ref _selectedSortOption, value))
+                    ApplyFilters();
+            }
+        }
+
+        public ObservableCollection<SortOption> SortOptions
+        {
+            get => _sortOptions;
+            set => Set(ref _sortOptions, value);
         }
 
         public string StatusMessage
@@ -85,6 +161,7 @@ namespace DiplomMurtazin.ViewModel
         public ICommand DeleteCommand { get; }
         public ICommand RefreshCommand { get; }
         public ICommand ResetFiltersCommand { get; }
+        public ICommand ShowPriceHistoryCommand { get; }
 
         public ProductsViewModel()
         {
@@ -94,11 +171,34 @@ namespace DiplomMurtazin.ViewModel
             DeleteCommand = new RelayCommand(DeleteProduct, CanEditDelete);
             RefreshCommand = new RelayCommand(RefreshData);
             ResetFiltersCommand = new RelayCommand(ResetFilters);
+            ShowPriceHistoryCommand = new RelayCommand(ShowPriceHistory, CanEditDelete);
 
+            InitializeSortOptions();
+            InitializeAvailabilityOptions();
             _allProducts = new ObservableCollection<Products>();
             _filteredProducts = new ObservableCollection<Products>();
             _categories = new ObservableCollection<Categories>();
+            _brands = new ObservableCollection<string>();
             DataRefreshBus.ExternalChangesDetected += OnExternalChangesDetected;
+        }
+
+        private void InitializeSortOptions()
+        {
+            SortOptions = new ObservableCollection<SortOption>
+            {
+                new SortOption { Name = "Название (А-Я)", Value = "ProductName", IsAscending = true },
+                new SortOption { Name = "Название (Я-А)", Value = "ProductName", IsAscending = false },
+                new SortOption { Name = "Цена (сначала дешёвые)", Value = "UnitPrice", IsAscending = true },
+                new SortOption { Name = "Цена (сначала дорогие)", Value = "UnitPrice", IsAscending = false },
+                new SortOption { Name = "Остаток (сначала больше)", Value = "StockQuantity", IsAscending = false },
+                new SortOption { Name = "Остаток (сначала меньше)", Value = "StockQuantity", IsAscending = true }
+            };
+            SelectedSortOption = SortOptions.FirstOrDefault();
+        }
+
+        private void InitializeAvailabilityOptions()
+        {
+            AvailabilityOptions = new ObservableCollection<string> { "Все", "В наличии", "Нет в наличии" };
         }
 
         private void OnExternalChangesDetected(int _)
@@ -110,15 +210,13 @@ namespace DiplomMurtazin.ViewModel
             }));
         }
 
-        private bool CanEditDelete(object parameter)
-        {
-            return SelectedProduct != null;
-        }
+        private bool CanEditDelete(object parameter) => SelectedProduct != null;
 
         private void OnLoaded(object parameter)
         {
             LoadData();
             LoadCategories();
+            LoadBrands();
         }
 
         private void LoadData()
@@ -126,32 +224,27 @@ namespace DiplomMurtazin.ViewModel
             try
             {
                 _context = new KPMurtazinEntities();
-
-                // Загружаем все товары
                 var productsList = _context.Products
                     .Include(p => p.Categories)
                     .OrderBy(p => p.ProductName)
                     .ToList();
 
-                // Загружаем остатки
+                var stockDict = _context.StockBalances
+                    .GroupBy(sb => sb.ProductID)
+                    .Select(g => new { ProductID = g.Key, TotalStock = g.Sum(sb => sb.Quantity) })
+                    .ToDictionary(k => k.ProductID, v => v.TotalStock);
+
                 foreach (var product in productsList)
                 {
-                    var stock = _context.StockBalances
-                        .Where(sb => sb.ProductID == product.ProductID)
-                        .Sum(sb => (int?)sb.Quantity);
-
-                    product.StockQuantity = stock ?? 0;
+                    product.StockQuantity = stockDict.ContainsKey(product.ProductID) ? stockDict[product.ProductID] : 0;
                 }
 
                 _allProducts.Clear();
                 foreach (var product in productsList)
-                {
                     _allProducts.Add(product);
-                }
 
                 _totalCount = _allProducts.Count;
                 ApplyFilters();
-
                 SetStatus("Готов к работе", false);
             }
             catch (Exception ex)
@@ -164,23 +257,12 @@ namespace DiplomMurtazin.ViewModel
         {
             try
             {
-                using (var context = new KPMurtazinEntities())
+                using (var ctx = new KPMurtazinEntities())
                 {
-                    var categoriesList = context.Categories.OrderBy(c => c.CategoryName).ToList();
-
-                    // Создаем элемент "Все категории"
-                    var allCategories = new Categories
-                    {
-                        CategoryID = 0,
-                        CategoryName = "Все категории"
-                    };
-
-                    categoriesList.Insert(0, allCategories);
-
-                    Categories = new ObservableCollection<Categories>(categoriesList);
-
-                    // Устанавливаем "Все категории" как выбранное
-                    SelectedCategoryFilter = allCategories;
+                    var list = ctx.Categories.OrderBy(c => c.CategoryName).ToList();
+                    list.Insert(0, new Categories { CategoryID = 0, CategoryName = "Все категории" });
+                    Categories = new ObservableCollection<Categories>(list);
+                    SelectedCategoryFilter = Categories.First();
                 }
             }
             catch (Exception ex)
@@ -189,38 +271,84 @@ namespace DiplomMurtazin.ViewModel
             }
         }
 
+        private void LoadBrands()
+        {
+            try
+            {
+                using (var ctx = new KPMurtazinEntities())
+                {
+                    var brands = ctx.Products.Where(p => p.Manufacturer != null && p.Manufacturer != "")
+                        .Select(p => p.Manufacturer).Distinct().OrderBy(b => b).ToList();
+                    brands.Insert(0, "Все бренды");
+                    Brands = new ObservableCollection<string>(brands);
+                    SelectedBrandFilter = Brands.FirstOrDefault();
+                }
+            }
+            catch (Exception ex)
+            {
+                SetStatus($"Ошибка загрузки брендов: {ex.Message}", true);
+            }
+        }
+
         private void ApplyFilters()
         {
             try
             {
-                var filtered = _allProducts.AsEnumerable();
+                var query = _allProducts.AsEnumerable();
 
-                // Фильтр по поисковому тексту
                 if (!string.IsNullOrWhiteSpace(SearchText))
                 {
-                    string searchLower = SearchText.ToLower();
-                    filtered = filtered.Where(p =>
-                        p.ProductName.ToLower().Contains(searchLower) ||
-                        (p.Manufacturer != null && p.Manufacturer.ToLower().Contains(searchLower)) ||
-                        (p.Barcode != null && p.Barcode.Contains(SearchText))
+                    string search = SearchText.ToLower();
+                    query = query.Where(p =>
+                        (p.ProductName ?? "").ToLower().Contains(search) ||
+                        (p.Barcode ?? "").ToLower().Contains(search) ||
+                        (p.Manufacturer ?? "").ToLower().Contains(search) ||
+                        (p.Model ?? "").ToLower().Contains(search)
                     );
                 }
 
-                // Фильтр по категории (если выбрана не "Все категории")
                 if (SelectedCategoryFilter != null && SelectedCategoryFilter.CategoryID > 0)
+                    query = query.Where(p => p.CategoryID == SelectedCategoryFilter.CategoryID);
+
+                if (!string.IsNullOrWhiteSpace(SelectedBrandFilter) && SelectedBrandFilter != "Все бренды")
+                    query = query.Where(p => p.Manufacturer == SelectedBrandFilter);
+
+                if (MinPrice.HasValue)
+                    query = query.Where(p => p.UnitPrice >= MinPrice.Value);
+                if (MaxPrice.HasValue)
+                    query = query.Where(p => p.UnitPrice <= MaxPrice.Value);
+
+                if (AvailabilityFilter == "В наличии")
+                    query = query.Where(p => p.StockQuantity > 0);
+                else if (AvailabilityFilter == "Нет в наличии")
+                    query = query.Where(p => p.StockQuantity == 0);
+
+                if (SelectedSortOption != null)
                 {
-                    filtered = filtered.Where(p => p.CategoryID == SelectedCategoryFilter.CategoryID);
+                    switch (SelectedSortOption.Value)
+                    {
+                        case "ProductName":
+                            query = SelectedSortOption.IsAscending
+                                ? query.OrderBy(p => p.ProductName)
+                                : query.OrderByDescending(p => p.ProductName);
+                            break;
+                        case "UnitPrice":
+                            query = SelectedSortOption.IsAscending
+                                ? query.OrderBy(p => p.UnitPrice)
+                                : query.OrderByDescending(p => p.UnitPrice);
+                            break;
+                        case "StockQuantity":
+                            query = SelectedSortOption.IsAscending
+                                ? query.OrderBy(p => p.StockQuantity)
+                                : query.OrderByDescending(p => p.StockQuantity);
+                            break;
+                    }
                 }
 
-                // Обновляем отфильтрованный список
-                FilteredProducts.Clear();
-                foreach (var product in filtered.OrderBy(p => p.ProductName))
-                {
-                    FilteredProducts.Add(product);
-                }
-
+                FilteredProducts = new ObservableCollection<Products>(query);
                 _filteredCount = FilteredProducts.Count;
                 OnPropertyChanged(nameof(FilteredProductsCount));
+                SetStatus($"Найдено: {_filteredCount}", false);
             }
             catch (Exception ex)
             {
@@ -231,13 +359,12 @@ namespace DiplomMurtazin.ViewModel
         private void ResetFilters(object parameter)
         {
             SearchText = "";
-
-            // Сбрасываем на "Все категории"
-            if (Categories != null)
-            {
-                SelectedCategoryFilter = Categories.FirstOrDefault(c => c.CategoryID == 0);
-            }
-
+            SelectedCategoryFilter = Categories.FirstOrDefault(c => c.CategoryID == 0);
+            SelectedBrandFilter = Brands.FirstOrDefault();
+            MinPrice = null;
+            MaxPrice = null;
+            AvailabilityFilter = "Все";
+            SelectedSortOption = SortOptions.FirstOrDefault();
             ApplyFilters();
             SetStatus("Фильтры сброшены", false);
         }
@@ -248,24 +375,17 @@ namespace DiplomMurtazin.ViewModel
             {
                 var editWindow = new ProductEditWindow();
                 editWindow.Owner = Application.Current.Windows.OfType<Window>().FirstOrDefault(w => w is MainWindow);
-
                 if (editWindow.ShowDialog() == true)
                 {
                     var newProduct = editWindow.GetProduct();
-
                     using (var context = new KPMurtazinEntities())
                     {
                         context.Products.Add(newProduct);
                         context.SaveChanges();
                         AuditLogger.Log("CREATE", "Product", $"Добавлен товар '{newProduct.ProductName}'", newProduct.ProductID.ToString());
-
                         RefreshData(null);
                         SetStatus("Товар успешно добавлен", false);
                     }
-                }
-                else
-                {
-                    SetStatus("Добавление товара отменено", false);
                 }
             }
             catch (Exception ex)
@@ -277,16 +397,13 @@ namespace DiplomMurtazin.ViewModel
         private void OpenEditWindow(object parameter)
         {
             if (SelectedProduct == null) return;
-
             try
             {
                 var editWindow = new ProductEditWindow(SelectedProduct);
                 editWindow.Owner = Application.Current.Windows.OfType<Window>().FirstOrDefault(w => w is MainWindow);
-
                 if (editWindow.ShowDialog() == true)
                 {
                     var editedProduct = editWindow.GetProduct();
-
                     using (var context = new KPMurtazinEntities())
                     {
                         var dbProduct = context.Products.Find(editedProduct.ProductID);
@@ -302,32 +419,26 @@ namespace DiplomMurtazin.ViewModel
                             dbProduct.WarrantyMonths = editedProduct.WarrantyMonths;
                             dbProduct.MinStockLevel = editedProduct.MinStockLevel;
                             dbProduct.Description = editedProduct.Description;
-                            dbProduct.PhotoData = editedProduct.PhotoData;
-                            dbProduct.PhotoPath = editedProduct.PhotoPath;
-
                             context.SaveChanges();
+
                             if (oldPrice != dbProduct.UnitPrice)
                             {
                                 context.Database.ExecuteSqlCommand(@"
-INSERT INTO dbo.ProductPriceHistory (ProductID, OldPrice, NewPrice, ChangedAt, ChangedByEmployeeID, Source)
-VALUES (@ProductID, @OldPrice, @NewPrice, @ChangedAt, @ChangedByEmployeeID, @Source)",
-                                    new System.Data.SqlClient.SqlParameter("@ProductID", dbProduct.ProductID),
-                                    new System.Data.SqlClient.SqlParameter("@OldPrice", oldPrice),
-                                    new System.Data.SqlClient.SqlParameter("@NewPrice", dbProduct.UnitPrice),
-                                    new System.Data.SqlClient.SqlParameter("@ChangedAt", DateTime.Now),
-                                    new System.Data.SqlClient.SqlParameter("@ChangedByEmployeeID", (object)App.CurrentUser?.EmployeeID ?? DBNull.Value),
-                                    new System.Data.SqlClient.SqlParameter("@Source", "ProductEdit"));
+                                    INSERT INTO dbo.ProductPriceHistory (ProductID, OldPrice, NewPrice, ChangedAt, ChangedByEmployeeID, Source)
+                                    VALUES (@pid, @old, @new, @dt, @eid, @src)",
+                                    new System.Data.SqlClient.SqlParameter("@pid", dbProduct.ProductID),
+                                    new System.Data.SqlClient.SqlParameter("@old", oldPrice),
+                                    new System.Data.SqlClient.SqlParameter("@new", dbProduct.UnitPrice),
+                                    new System.Data.SqlClient.SqlParameter("@dt", DateTime.Now),
+                                    new System.Data.SqlClient.SqlParameter("@eid", (object)App.CurrentUser?.EmployeeID ?? DBNull.Value),
+                                    new System.Data.SqlClient.SqlParameter("@src", "ProductEdit"));
                             }
-                            AuditLogger.Log("UPDATE", "Product", $"Обновлен товар '{dbProduct.ProductName}'", dbProduct.ProductID.ToString());
 
+                            AuditLogger.Log("UPDATE", "Product", $"Обновлен товар '{dbProduct.ProductName}'", dbProduct.ProductID.ToString());
                             RefreshData(null);
                             SetStatus("Товар успешно обновлен", false);
                         }
                     }
-                }
-                else
-                {
-                    SetStatus("Редактирование товара отменено", false);
                 }
             }
             catch (Exception ex)
@@ -339,13 +450,8 @@ VALUES (@ProductID, @OldPrice, @NewPrice, @ChangedAt, @ChangedByEmployeeID, @Sou
         private void DeleteProduct(object parameter)
         {
             if (SelectedProduct == null) return;
-
-            var result = MessageBox.Show(
-                $"Удалить товар '{SelectedProduct.ProductName}'?",
-                "Подтверждение",
-                MessageBoxButton.YesNo,
-                MessageBoxImage.Question);
-
+            var result = MessageBox.Show($"Удалить товар '{SelectedProduct.ProductName}'?", "Подтверждение",
+                MessageBoxButton.YesNo, MessageBoxImage.Question);
             if (result == MessageBoxResult.Yes)
             {
                 try
@@ -356,20 +462,17 @@ VALUES (@ProductID, @OldPrice, @NewPrice, @ChangedAt, @ChangedByEmployeeID, @Sou
                                       context.InventoryDetails.Any(id => id.ProductID == SelectedProduct.ProductID) ||
                                       context.InvoiceItems.Any(ii => ii.ProductID == SelectedProduct.ProductID) ||
                                       context.StockBalances.Any(sb => sb.ProductID == SelectedProduct.ProductID);
-
                         if (isUsed)
                         {
                             SetStatus("Нельзя удалить: товар используется в документах", true);
                             return;
                         }
-
                         var productToDelete = context.Products.Find(SelectedProduct.ProductID);
                         if (productToDelete != null)
                         {
                             context.Products.Remove(productToDelete);
                             context.SaveChanges();
                             AuditLogger.Log("DELETE", "Product", $"Удален товар '{productToDelete.ProductName}'", productToDelete.ProductID.ToString());
-
                             RefreshData(null);
                             SetStatus("Товар удален", false);
                         }
@@ -380,10 +483,6 @@ VALUES (@ProductID, @OldPrice, @NewPrice, @ChangedAt, @ChangedByEmployeeID, @Sou
                     SetStatus($"Ошибка удаления: {ex.Message}", true);
                 }
             }
-            else
-            {
-                SetStatus("Удаление товара отменено", false);
-            }
         }
 
         private void RefreshData(object parameter)
@@ -391,18 +490,22 @@ VALUES (@ProductID, @OldPrice, @NewPrice, @ChangedAt, @ChangedByEmployeeID, @Sou
             _context?.Dispose();
             LoadData();
             LoadCategories();
+            LoadBrands();
             SetStatus("Данные обновлены", false);
+        }
+
+        private void ShowPriceHistory(object parameter)
+        {
+            if (SelectedProduct == null) return;
+            var window = new PriceHistoryWindow(SelectedProduct.ProductID);
+            window.Owner = Application.Current.Windows.OfType<Window>().FirstOrDefault(w => w is MainWindow);
+            window.ShowDialog();
         }
 
         private void SetStatus(string message, bool isError)
         {
             StatusMessage = message;
             StatusColor = isError ? "#e74c3c" : "#3498db";
-        }
-
-        public bool HasChanges()
-        {
-            return false; // Упрощенно
         }
 
         public void DisposeContext()
