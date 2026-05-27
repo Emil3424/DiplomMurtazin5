@@ -15,7 +15,7 @@
             <!-- Заголовок -->
             <TextBlock Text="Панель управления" FontSize="30" FontWeight="Bold" Margin="0 0 0 20"/>
 
-            <!-- Фильтры -->
+            <!-- Панель фильтров (существующая) -->
             <Border Background="White" CornerRadius="5" Padding="15" Margin="0 0 0 20">
                 <StackPanel>
                     <WrapPanel Margin="0 0 0 10">
@@ -48,6 +48,16 @@
                 </StackPanel>
             </Border>
 
+            <!-- Кнопки экспорта -->
+            <Border Background="White" CornerRadius="5" Padding="10" Margin="0 0 0 20">
+                <StackPanel Orientation="Horizontal" HorizontalAlignment="Right">
+                    <Button Content="📄 Экспорт PDF" Command="{Binding ExportDashboardToPdfCommand}" Margin="5,0" Padding="10,5" Background="#2c3e50" Foreground="White"/>
+                    <Button Content="📊 Экспорт CSV" Command="{Binding ExportDashboardToCsvCommand}" Margin="5,0" Padding="10,5" Background="#27ae60" Foreground="White"/>
+                    <Button Content="📈 Экспорт Excel" Command="{Binding ExportDashboardToExcelCommand}" Margin="5,0" Padding="10,5" Background="#8e44ad" Foreground="White"/>
+                    <Button Content="🔄 Сбросить сортировку" Command="{Binding ResetSortingCommand}" Margin="20,0,0,0" Padding="10,5" Background="#95a5a6" Foreground="White"/>
+                </StackPanel>
+            </Border>
+            
             <!-- Карточки показателей -->
             <WrapPanel Margin="0 0 0 20">
                 <Border Width="230" Height="120" Margin="10" CornerRadius="10" Background="#3498db">
@@ -80,7 +90,7 @@
             <Border Background="White" CornerRadius="10" Padding="15" Margin="0 0 0 20">
                 <StackPanel>
                     <TextBlock Text="Продажи по дням" FontSize="22" FontWeight="Bold" Margin="0 0 0 15"/>
-                    <lvc:CartesianChart Series="{Binding SalesSeries}" Height="300">
+                    <lvc:CartesianChart x:Name="SalesChart" Series="{Binding SalesSeries}" Height="300">
                         <lvc:CartesianChart.AxisX>
                             <lvc:Axis Labels="{Binding SalesLabels}"/>
                         </lvc:CartesianChart.AxisX>
@@ -91,10 +101,16 @@
                 </StackPanel>
             </Border>
 
-            <!-- Статистика по кассирам -->
+
+            <!-- Статистика по кассирам с сортировкой -->
             <Border Background="White" CornerRadius="10" Padding="15" Margin="0 0 0 20">
                 <StackPanel>
-                    <TextBlock Text="Статистика по кассирам" FontSize="22" FontWeight="Bold" Margin="0 0 0 15"/>
+                    <StackPanel Orientation="Horizontal" Margin="0 0 0 15">
+                        <TextBlock Text="Статистика по кассирам" FontSize="22" FontWeight="Bold" VerticalAlignment="Center"/>
+                        <TextBlock Text="Сортировать:" Margin="20,0,10,0" VerticalAlignment="Center"/>
+                        <ComboBox ItemsSource="{Binding CashierSortOptions}" SelectedItem="{Binding SortCashiersBy}" Width="120" Height="30" Margin="0,0,10,0"/>
+                        <Button Content="Применить сортировку" Command="{Binding ApplySortingCommand}" Padding="10,5" Background="#3498db" Foreground="White"/>
+                    </StackPanel>
                     <DataGrid ItemsSource="{Binding CashierStats}" AutoGenerateColumns="False" Height="200">
                         <DataGrid.Columns>
                             <DataGridTextColumn Header="Кассир" Binding="{Binding EmployeeName}" Width="*"/>
@@ -136,10 +152,16 @@
                 </StackPanel>
             </Border>
 
-            <!-- Последние продажи -->
+            <!-- Последние продажи с сортировкой -->
             <Border Background="White" CornerRadius="10" Padding="15">
                 <StackPanel>
-                    <TextBlock Text="Последние продажи" FontSize="22" FontWeight="Bold" Margin="0 0 0 15"/>
+                    <StackPanel Orientation="Horizontal" Margin="0 0 0 15">
+                        <TextBlock Text="Последние продажи" FontSize="22" FontWeight="Bold" VerticalAlignment="Center"/>
+                        <TextBlock Text="Сортировать по:" Margin="20,0,10,0" VerticalAlignment="Center"/>
+                        <ComboBox ItemsSource="{Binding LastSalesSortOptions}" SelectedItem="{Binding SortLastSalesBy}" Width="100" Height="30" Margin="0,0,10,0"/>
+                        <CheckBox IsChecked="{Binding SortLastSalesDescending}" Content="По убыванию" VerticalAlignment="Center" Margin="0,0,15,0"/>
+                        <Button Content="Применить" Command="{Binding ApplySortingCommand}" Padding="10,5" Background="#3498db" Foreground="White"/>
+                    </StackPanel>
                     <DataGrid ItemsSource="{Binding LastSales}" AutoGenerateColumns="False" Height="300">
                         <DataGrid.Columns>
                             <DataGridTextColumn Header="ID" Binding="{Binding SaleID}"/>

@@ -1,11 +1,21 @@
-﻿// DiplomMurtazin/ViewModel/DashboardViewModel.cs
-using System;
-using System.Collections.ObjectModel;
-using System.Linq;
-using System.Windows.Input;
-using DiplomMurtazin.Core;
+﻿using DiplomMurtazin.Core;
+using DiplomMurtazin.View;
 using LiveCharts;
 using LiveCharts.Wpf;
+using Microsoft.Win32;
+using PdfSharp.Drawing;
+using PdfSharp.Pdf;
+using System;
+using System.Collections.ObjectModel;
+using System.Diagnostics;
+using System.IO;
+using System.Linq;
+using System.Text;
+using System.Windows;
+using System.Windows.Input;
+using System.Windows.Media;
+using System.Windows.Media.Imaging;
+using Excel = Microsoft.Office.Interop.Excel;
 
 namespace DiplomMurtazin.ViewModel
 {
@@ -64,7 +74,47 @@ namespace DiplomMurtazin.ViewModel
         // Низкие остатки с прогнозом
         private ObservableCollection<LowStockItem> _lowStockItems;
         public ObservableCollection<LowStockItem> LowStockItems { get => _lowStockItems; set => Set(ref _lowStockItems, value); }
+        private string _sortCashiersBy = "Выручка"; // "Выручка", "Продажи", "Имя"
+        private string _sortLastSalesBy = "Дата";   // "Дата", "Сумма"
+        private bool _sortLastSalesDescending = true;
 
+        public string SortCashiersBy
+        {
+            get => _sortCashiersBy;
+            set
+            {
+                if (Set(ref _sortCashiersBy, value))
+                    ApplySorting();
+            }
+        }
+
+        public string SortLastSalesBy
+        {
+            get => _sortLastSalesBy;
+            set
+            {
+                if (Set(ref _sortLastSalesBy, value))
+                    ApplySorting();
+            }
+        }
+
+        public bool SortLastSalesDescending
+        {
+            get => _sortLastSalesDescending;
+            set
+            {
+                if (Set(ref _sortLastSalesDescending, value))
+                    ApplySorting();
+            }
+        }
+
+        // Команды экспорта
+        public ICommand ExportDashboardToPdfCommand { get; }
+        public ICommand ExportDashboardToCsvCommand { get; }
+        public ICommand ExportDashboardToExcelCommand { get; }
+
+        // Команды для сброса сортировки/фильтров (опционально)
+        public ICommand ResetSortingCommand { get; }
         // Команды
         public ICommand RefreshCommand { get; }
         public ICommand SetTodayCommand { get; }
@@ -86,6 +136,10 @@ namespace DiplomMurtazin.ViewModel
             SetMonthCommand = new RelayCommand(_ => SetPeriod(Period.Month));
             SetYearCommand = new RelayCommand(_ => SetPeriod(Period.Year));
             CreatePurchaseOrderCommand = new RelayCommand(_ => CreatePurchaseOrder());
+            ExportDashboardToPdfCommand = new RelayCommand(_ => ExportDashboardToPdf());
+            ExportDashboardToCsvCommand = new RelayCommand(_ => ExportDashboardToCsv());
+            ExportDashboardToExcelCommand = new RelayCommand(_ => ExportDashboardToExcel());
+            ResetSortingCommand = new RelayCommand(_ => ResetSorting());
 
             LoadInitialData();
         }
@@ -96,7 +150,540 @@ namespace DiplomMurtazin.ViewModel
             LoadCategories();
             LoadData();
         }
+        private void ApplySorting()
+        {
+            if (CashierStats != null)
+            {
+                var sorted = SortCashiersBy switch
+                {
+                    "Выручка" => CashierStats.OrderByDescending(c => c.TotalAmount),
+                    "Продажи" => CashierStats.OrderByDescending(c => c.SalesCount),
+                    _ => CashierStats.OrderBy(c => c.EmployeeName)
+                };
+                CashierStats = new ObservableCollection<CashierStat>(sorted);
+            }
 
+            if (LastSales != null)
+            {
+                var sorted = SortLastSalesBy switch
+                {
+                    "Сумма" => SortLastSalesDescending
+                        ? LastSales.OrderByDescending(s => s.TotalAmount)
+                        : LastSales.OrderBy(s => s.TotalAmount),
+                    _ => SortLastSalesDescending
+                        ? LastSales.OrderByDescending(s => s.SaleDateTime)
+                        : LastSales.OrderBy(s => s.SaleDateTime)
+                };
+                LastSales = new ObservableCollection<Sales>(sorted);
+            }
+        }
+
+        private void ResetSorting()
+        {
+            SortCashiersBy = "Выручка";
+            SortLastSalesBy = "Дата";
+            SortLastSalesDescending = true;
+            ApplySorting();
+        }
+
+        private BitmapSource CaptureChartImage()
+        {
+            try
+            {
+                // Ищем элемент CartesianChart на странице (можно передать ссылку через событие, но проще сохранить в статике)
+                // Поскольку ViewModel не имеет прямого доступа к визуальным элементам, используем хак: 
+                // находим активное окно и ищем нужный контрол по имени.
+                // Альтернатива: передать FrameworkElement через параметр команды. Для простоты сделаем через Application.Current.Windows.
+                var mainWindow = Application.Current.Windows.OfType<Window>().FirstOrDefault(w => w is MainWindow) as MainWindow;
+                if (mainWindow == null) return null;
+                var frame = mainWindow.MainFrame;
+                if (frame == null) return null;
+                var dashboardPage = frame.Content as DashboardPage;
+                if (dashboardPage == null) return null;
+
+                // Ищем CartesianChart по имени (добавим x:Name="SalesChart" в XAML)
+                var chart = dashboardPage.FindName("SalesChart") as LiveCharts.Wpf.CartesianChart;
+                if (chart == null) return null;
+
+                // Рендерим контрол в изображение
+                var renderTarget = new RenderTargetBitmap((int)chart.ActualWidth, (int)chart.ActualHeight, 96, 96, PixelFormats.Pbgra32);
+                renderTarget.Render(chart);
+                return renderTarget;
+            }
+            catch (Exception ex)
+            {
+                Debug.WriteLine($"Ошибка захвата графика: {ex.Message}");
+                return null;
+            }
+        }
+
+        // В ExportDashboardToPdf() добавляем вставку изображения графика и итоговые строки, а также разрывы страниц.
+        private void ExportDashboardToPdf()
+        {
+            var dialog = new SaveFileDialog
+            {
+                Filter = "PDF files (*.pdf)|*.pdf",
+                FileName = $"Dashboard_{DateTime.Now:yyyyMMddHHmmss}.pdf",
+                DefaultExt = ".pdf"
+            };
+            if (dialog.ShowDialog() != true) return;
+
+            using (var document = new PdfDocument())
+            {
+                document.Info.Title = $"Панель управления за {StartDate:dd.MM.yyyy} - {EndDate:dd.MM.yyyy}";
+                document.Info.Creator = "KPMurtazin";
+
+                var fontTitle = new XFont("Arial", 14, XFontStyleEx.Bold);
+                var fontHeader = new XFont("Arial", 10, XFontStyleEx.Bold);
+                var fontNormal = new XFont("Arial", 9, XFontStyleEx.Regular);
+                double leftMargin = 40;
+
+                // --- СТРАНИЦА 1: Основные показатели и график ---
+                var page = document.AddPage();
+                page.Width = XUnit.FromPoint(595);
+                page.Height = XUnit.FromPoint(842);
+                var gfx = XGraphics.FromPdfPage(page);
+                double yPos = 30;
+
+                gfx.DrawString("ОТЧЕТ ДАШБОРД", fontTitle, XBrushes.DarkBlue, leftMargin, yPos);
+                yPos += 20;
+                gfx.DrawString($"Период: {StartDate:dd.MM.yyyy} - {EndDate:dd.MM.yyyy}", fontNormal, XBrushes.Black, leftMargin, yPos);
+                yPos += 15;
+                gfx.DrawString($"Дата формирования: {DateTime.Now:dd.MM.yyyy HH:mm}", fontNormal, XBrushes.Black, leftMargin, yPos);
+                yPos += 25;
+
+                gfx.DrawString("ОСНОВНЫЕ ПОКАЗАТЕЛИ", fontHeader, XBrushes.DarkBlue, leftMargin, yPos);
+                yPos += 15;
+                gfx.DrawString($"Общая выручка: {TotalRevenue:F2} ₽", fontNormal, XBrushes.Black, leftMargin, yPos);
+                yPos += 15;
+                gfx.DrawString($"Количество продаж: {SalesCount}", fontNormal, XBrushes.Black, leftMargin, yPos);
+                yPos += 15;
+                gfx.DrawString($"Всего товаров: {ProductsCount}", fontNormal, XBrushes.Black, leftMargin, yPos);
+                yPos += 15;
+                gfx.DrawString($"Мало товара: {LowStockCount}", fontNormal, XBrushes.Black, leftMargin, yPos);
+                yPos += 25;
+
+                // Вставка изображения графика
+                var chartImage = CaptureChartImage();
+                if (chartImage != null)
+                {
+                    // Сохраняем BitmapSource во временный файл, затем вставляем
+                    string tempFile = Path.GetTempFileName() + ".png";
+                    using (var stream = new FileStream(tempFile, FileMode.Create))
+                    {
+                        var encoder = new PngBitmapEncoder();
+                        encoder.Frames.Add(BitmapFrame.Create(chartImage));
+                        encoder.Save(stream);
+                    }
+                    var xImage = XImage.FromFile(tempFile);
+                    double imgWidth = page.Width.Point - 80;
+                    double imgHeight = xImage.PixelHeight * (imgWidth / xImage.PixelWidth);
+                    gfx.DrawImage(xImage, leftMargin, yPos, imgWidth, imgHeight);
+                    yPos += imgHeight + 20;
+                    File.Delete(tempFile);
+                }
+                else
+                {
+                    gfx.DrawString("(График не доступен)", fontNormal, XBrushes.Gray, leftMargin, yPos);
+                    yPos += 20;
+                }
+
+                gfx.Dispose();
+
+                // --- СТРАНИЦА 2: Статистика по кассирам, Топ-10, Низкие остатки ---
+                page = document.AddPage();
+                gfx = XGraphics.FromPdfPage(page);
+                yPos = 30;
+
+                if (CashierStats != null && CashierStats.Any())
+                {
+                    gfx.DrawString("СТАТИСТИКА КАССИРОВ", fontHeader, XBrushes.DarkBlue, leftMargin, yPos);
+                    yPos += 15;
+                    gfx.DrawString("Кассир", fontHeader, XBrushes.Black, leftMargin, yPos);
+                    gfx.DrawString("Продаж", fontHeader, XBrushes.Black, leftMargin + 150, yPos);
+                    gfx.DrawString("Выручка", fontHeader, XBrushes.Black, leftMargin + 230, yPos);
+                    gfx.DrawString("Ср. чек", fontHeader, XBrushes.Black, leftMargin + 320, yPos);
+                    yPos += 15;
+
+                    decimal totalRevenue = 0;
+                    int totalSales = 0;
+                    foreach (var c in CashierStats)
+                    {
+                        if (yPos > page.Height.Point - 50)
+                        {
+                            page = document.AddPage();
+                            gfx.Dispose();
+                            gfx = XGraphics.FromPdfPage(page);
+                            yPos = 30;
+                        }
+                        gfx.DrawString(c.EmployeeName, fontNormal, XBrushes.Black, leftMargin, yPos);
+                        gfx.DrawString(c.SalesCount.ToString(), fontNormal, XBrushes.Black, leftMargin + 150, yPos);
+                        gfx.DrawString($"{c.TotalAmount:F2} ₽", fontNormal, XBrushes.Black, leftMargin + 230, yPos);
+                        gfx.DrawString($"{c.AverageCheck:F2} ₽", fontNormal, XBrushes.Black, leftMargin + 320, yPos);
+                        totalRevenue += c.TotalAmount;
+                        totalSales += c.SalesCount;
+                        yPos += 15;
+                    }
+                    yPos += 5;
+                    gfx.DrawString($"ИТОГО: {totalRevenue:F2} ₽ (всего продаж: {totalSales})", fontNormal, XBrushes.Black, leftMargin, yPos);
+                    yPos += 25;
+                }
+
+                // Топ-10 товаров
+                if (TopProducts != null && TopProducts.Any())
+                {
+                    if (yPos > page.Height.Point - 150) { page = document.AddPage(); gfx = XGraphics.FromPdfPage(page); yPos = 30; }
+                    gfx.DrawString("ТОП-10 ТОВАРОВ", fontHeader, XBrushes.DarkBlue, leftMargin, yPos);
+                    yPos += 15;
+                    gfx.DrawString("Товар", fontHeader, XBrushes.Black, leftMargin, yPos);
+                    gfx.DrawString("Продано, шт", fontHeader, XBrushes.Black, leftMargin + 250, yPos);
+                    yPos += 15;
+                    int totalQuantity = 0;
+                    foreach (var p in TopProducts.Take(10))
+                    {
+                        if (yPos > page.Height.Point - 30) { page = document.AddPage(); gfx = XGraphics.FromPdfPage(page); yPos = 30; }
+                        gfx.DrawString(p.ProductName, fontNormal, XBrushes.Black, leftMargin, yPos);
+                        gfx.DrawString(p.TotalQuantity.ToString(), fontNormal, XBrushes.Black, leftMargin + 250, yPos);
+                        totalQuantity += p.TotalQuantity;
+                        yPos += 12;
+                    }
+                    yPos += 5;
+                    gfx.DrawString($"ИТОГО продано: {totalQuantity} шт.", fontNormal, XBrushes.Black, leftMargin, yPos);
+                    yPos += 25;
+                }
+
+                // Низкие остатки
+                if (LowStockItems != null && LowStockItems.Any())
+                {
+                    if (yPos > page.Height.Point - 150) { page = document.AddPage(); gfx = XGraphics.FromPdfPage(page); yPos = 30; }
+                    gfx.DrawString("НИЗКИЕ ОСТАТКИ И ПРОГНОЗ", fontHeader, XBrushes.DarkBlue, leftMargin, yPos);
+                    yPos += 15;
+                    gfx.DrawString("Товар", fontHeader, XBrushes.Black, leftMargin, yPos);
+                    gfx.DrawString("Остаток", fontHeader, XBrushes.Black, leftMargin + 200, yPos);
+                    gfx.DrawString("Мин. остаток", fontHeader, XBrushes.Black, leftMargin + 280, yPos);
+                    gfx.DrawString("Прогноз, дней", fontHeader, XBrushes.Black, leftMargin + 380, yPos);
+                    yPos += 15;
+                    foreach (var item in LowStockItems)
+                    {
+                        if (yPos > page.Height.Point - 30) { page = document.AddPage(); gfx = XGraphics.FromPdfPage(page); yPos = 30; }
+                        gfx.DrawString(item.ProductName, fontNormal, XBrushes.Black, leftMargin, yPos);
+                        gfx.DrawString(item.CurrentStock.ToString(), fontNormal, XBrushes.Black, leftMargin + 200, yPos);
+                        gfx.DrawString(item.MinStockLevel.ToString(), fontNormal, XBrushes.Black, leftMargin + 280, yPos);
+                        gfx.DrawString(item.DaysUntilOutDisplay, fontNormal, XBrushes.Black, leftMargin + 380, yPos);
+                        yPos += 12;
+                    }
+                    yPos += 25;
+                }
+
+                gfx.Dispose();
+
+                // --- СТРАНИЦА 3: Последние продажи (с итогами) ---
+                page = document.AddPage();
+                gfx = XGraphics.FromPdfPage(page);
+                yPos = 30;
+
+                if (LastSales != null && LastSales.Any())
+                {
+                    gfx.DrawString("ПОСЛЕДНИЕ ПРОДАЖИ", fontHeader, XBrushes.DarkBlue, leftMargin, yPos);
+                    yPos += 15;
+                    gfx.DrawString("ID", fontHeader, XBrushes.Black, leftMargin, yPos);
+                    gfx.DrawString("Дата", fontHeader, XBrushes.Black, leftMargin + 50, yPos);
+                    gfx.DrawString("Сумма", fontHeader, XBrushes.Black, leftMargin + 180, yPos);
+                    gfx.DrawString("Оплата", fontHeader, XBrushes.Black, leftMargin + 260, yPos);
+                    yPos += 15;
+                    decimal totalSalesAmount = 0;
+                    foreach (var sale in LastSales.Take(20))
+                    {
+                        if (yPos > page.Height.Point - 30) { page = document.AddPage(); gfx = XGraphics.FromPdfPage(page); yPos = 30; }
+                        gfx.DrawString(sale.SaleID.ToString(), fontNormal, XBrushes.Black, leftMargin, yPos);
+                        gfx.DrawString(sale.SaleDateTime.ToString("dd.MM.yy HH:mm"), fontNormal, XBrushes.Black, leftMargin + 50, yPos);
+                        gfx.DrawString($"{sale.TotalAmount:F2} ₽", fontNormal, XBrushes.Black, leftMargin + 180, yPos);
+                        gfx.DrawString(sale.PaymentMethod, fontNormal, XBrushes.Black, leftMargin + 260, yPos);
+                        totalSalesAmount += sale.TotalAmount;
+                        yPos += 12;
+                    }
+                    yPos += 5;
+                    gfx.DrawString($"ИТОГО по последним {LastSales.Count} продажам: {totalSalesAmount:F2} ₽", fontNormal, XBrushes.Black, leftMargin, yPos);
+                }
+                gfx.Dispose();
+
+                document.Save(dialog.FileName);
+            }
+
+            // Автоматически открыть файл
+            System.Diagnostics.Process.Start(new System.Diagnostics.ProcessStartInfo(dialog.FileName) { UseShellExecute = true });
+            MessageBox.Show($"Дашборд экспортирован в PDF: {dialog.FileName}", "Успех", MessageBoxButton.OK, MessageBoxImage.Information);
+        }
+
+        private void ExportDashboardToCsv()
+        {
+            var dialog = new SaveFileDialog
+            {
+                Filter = "CSV files (*.csv)|*.csv",
+                FileName = $"Dashboard_{DateTime.Now:yyyyMMddHHmmss}.csv",
+                DefaultExt = ".csv"
+            };
+            if (dialog.ShowDialog() != true) return;
+
+            var sb = new StringBuilder();
+
+            sb.AppendLine($"Дашборд за период {StartDate:dd.MM.yyyy} - {EndDate:dd.MM.yyyy}");
+            sb.AppendLine($"Дата выгрузки: {DateTime.Now:dd.MM.yyyy HH:mm}");
+            sb.AppendLine();
+
+            // Основные показатели
+            sb.AppendLine("ОСНОВНЫЕ ПОКАЗАТЕЛИ");
+            sb.AppendLine($"Общая выручка;{TotalRevenue:F2} ₽");
+            sb.AppendLine($"Количество продаж;{SalesCount}");
+            sb.AppendLine($"Всего товаров;{ProductsCount}");
+            sb.AppendLine($"Мало товара;{LowStockCount}");
+            sb.AppendLine();
+
+            // График продаж по дням (данные)
+            sb.AppendLine("ПРОДАЖИ ПО ДНЯМ");
+            sb.AppendLine("Дата;Сумма, ₽");
+            for (int i = 0; i < SalesLabels.Length; i++)
+            {
+                var amount = ((LineSeries)SalesSeries[0]).Values[i];
+                sb.AppendLine($"{SalesLabels[i]};{amount:N2}");
+            }
+            sb.AppendLine($"ИТОГО ЗА ПЕРИОД;{TotalRevenue:F2} ₽");
+            sb.AppendLine();
+
+            // Статистика кассиров
+            sb.AppendLine("СТАТИСТИКА КАССИРОВ");
+            sb.AppendLine("Кассир;Продаж;Выручка, ₽;Средний чек, ₽");
+            decimal cashierTotal = 0;
+            foreach (var c in CashierStats)
+            {
+                sb.AppendLine($"{c.EmployeeName};{c.SalesCount};{c.TotalAmount:F2};{c.AverageCheck:F2}");
+                cashierTotal += c.TotalAmount;
+            }
+            sb.AppendLine($"ИТОГО ПО КАССИРАМ;;{cashierTotal:F2} ₽;");
+            sb.AppendLine();
+
+            // Топ-10 товаров
+            sb.AppendLine("ТОП-10 ТОВАРОВ");
+            sb.AppendLine("Товар;Продано, шт");
+            int totalTopQuantity = 0;
+            foreach (var p in TopProducts.Take(10))
+            {
+                sb.AppendLine($"{p.ProductName};{p.TotalQuantity}");
+                totalTopQuantity += p.TotalQuantity;
+            }
+            sb.AppendLine($"ИТОГО В ТОП-10;{totalTopQuantity} шт");
+            sb.AppendLine();
+
+            // Низкие остатки
+            sb.AppendLine("НИЗКИЕ ОСТАТКИ И ПРОГНОЗ");
+            sb.AppendLine("Товар;Остаток;Мин. остаток;Прогноз (дней)");
+            foreach (var item in LowStockItems)
+                sb.AppendLine($"{item.ProductName};{item.CurrentStock};{item.MinStockLevel};{item.DaysUntilOutDisplay}");
+            sb.AppendLine();
+
+            // Последние продажи
+            sb.AppendLine("ПОСЛЕДНИЕ ПРОДАЖИ");
+            sb.AppendLine("ID продажи;Дата;Сумма, ₽;Способ оплаты");
+            decimal lastSalesTotal = 0;
+            foreach (var sale in LastSales)
+            {
+                sb.AppendLine($"{sale.SaleID};{sale.SaleDateTime:dd.MM.yyyy HH:mm};{sale.TotalAmount:F2};{sale.PaymentMethod}");
+                lastSalesTotal += sale.TotalAmount;
+            }
+            sb.AppendLine($"ИТОГО ПО {LastSales.Count} ПРОДАЖАМ;;{lastSalesTotal:F2} ₽;");
+
+            File.WriteAllText(dialog.FileName, sb.ToString(), Encoding.UTF8);
+            System.Diagnostics.Process.Start(new System.Diagnostics.ProcessStartInfo(dialog.FileName) { UseShellExecute = true });
+            MessageBox.Show($"Дашборд экспортирован в CSV: {dialog.FileName}", "Успех", MessageBoxButton.OK, MessageBoxImage.Information);
+        }
+
+        private void ExportDashboardToExcel()
+        {
+            var dialog = new SaveFileDialog
+            {
+                Filter = "Excel files (*.xlsx)|*.xlsx",
+                FileName = $"Dashboard_{DateTime.Now:yyyyMMddHHmmss}.xlsx",
+                DefaultExt = ".xlsx"
+            };
+            if (dialog.ShowDialog() != true) return;
+
+            // Используем Interop для создания полноценного Excel-файла с графиком
+            Excel.Application excel = null;
+            Excel.Workbook workbook = null;
+            Excel.Worksheet worksheet = null;
+            try
+            {
+                excel = new Excel.Application();
+                excel.Visible = false;
+                workbook = excel.Workbooks.Add();
+                worksheet = (Excel.Worksheet)workbook.Worksheets[1];
+                worksheet.Name = "Dashboard";
+
+                int row = 1;
+                // Заголовок
+                worksheet.Cells[row, 1] = $"Дашборд за период {StartDate:dd.MM.yyyy} - {EndDate:dd.MM.yyyy}";
+                row++;
+                worksheet.Cells[row, 1] = $"Дата выгрузки: {DateTime.Now:dd.MM.yyyy HH:mm}";
+                row += 2;
+
+                // Основные показатели
+                worksheet.Cells[row, 1] = "ОСНОВНЫЕ ПОКАЗАТЕЛИ";
+                row++;
+                worksheet.Cells[row, 1] = "Общая выручка";
+                worksheet.Cells[row, 2] = $"{TotalRevenue:F2} ₽";
+                row++;
+                worksheet.Cells[row, 1] = "Количество продаж";
+                worksheet.Cells[row, 2] = SalesCount;
+                row++;
+                worksheet.Cells[row, 1] = "Всего товаров";
+                worksheet.Cells[row, 2] = ProductsCount;
+                row++;
+                worksheet.Cells[row, 1] = "Мало товара";
+                worksheet.Cells[row, 2] = LowStockCount;
+                row += 2;
+
+                // График продаж (данные)
+                worksheet.Cells[row, 1] = "ПРОДАЖИ ПО ДНЯМ";
+                row++;
+                worksheet.Cells[row, 1] = "Дата";
+                worksheet.Cells[row, 2] = "Сумма, ₽";
+                row++;
+                int dataStartRow = row;
+                for (int i = 0; i < SalesLabels.Length; i++)
+                {
+                    worksheet.Cells[row, 1] = SalesLabels[i];
+                    var amount = ((LineSeries)SalesSeries[0]).Values[i];
+                    worksheet.Cells[row, 2] = amount;
+                    row++;
+                }
+                worksheet.Cells[row, 1] = "ИТОГО ЗА ПЕРИОД";
+                worksheet.Cells[row, 2] = TotalRevenue;
+                row += 2;
+
+                // Создание графика на основе данных
+                Excel.Range chartRange = worksheet.Range[worksheet.Cells[dataStartRow, 1], worksheet.Cells[row - 3, 2]];
+                Excel.ChartObjects chartObjects = (Excel.ChartObjects)worksheet.ChartObjects();
+                Excel.ChartObject chartObject = chartObjects.Add(100, 100, 400, 250);
+                Excel.Chart chart = chartObject.Chart;
+                chart.SetSourceData(chartRange);
+                chart.ChartType = Excel.XlChartType.xlLine;
+                chart.HasTitle = true;
+                chart.ChartTitle.Text = "Продажи по дням";
+
+                // Переместим график правее данных
+                chartObject.Left = 450;
+                chartObject.Top = 100;
+                row += 10;
+
+                // Статистика кассиров
+                worksheet.Cells[row, 1] = "СТАТИСТИКА КАССИРОВ";
+                row++;
+                worksheet.Cells[row, 1] = "Кассир";
+                worksheet.Cells[row, 2] = "Продаж";
+                worksheet.Cells[row, 3] = "Выручка, ₽";
+                worksheet.Cells[row, 4] = "Средний чек, ₽";
+                row++;
+                foreach (var c in CashierStats)
+                {
+                    worksheet.Cells[row, 1] = c.EmployeeName;
+                    worksheet.Cells[row, 2] = c.SalesCount;
+                    worksheet.Cells[row, 3] = c.TotalAmount;
+                    worksheet.Cells[row, 4] = c.AverageCheck;
+                    row++;
+                }
+                worksheet.Cells[row, 1] = "ИТОГО ПО КАССИРАМ";
+                worksheet.Cells[row, 3] = CashierStats.Sum(c => c.TotalAmount);
+                row += 2;
+
+                // Топ-10 товаров
+                worksheet.Cells[row, 1] = "ТОП-10 ТОВАРОВ";
+                row++;
+                worksheet.Cells[row, 1] = "Товар";
+                worksheet.Cells[row, 2] = "Продано, шт";
+                row++;
+                foreach (var p in TopProducts.Take(10))
+                {
+                    worksheet.Cells[row, 1] = p.ProductName;
+                    worksheet.Cells[row, 2] = p.TotalQuantity;
+                    row++;
+                }
+                worksheet.Cells[row, 1] = "ИТОГО В ТОП-10";
+                worksheet.Cells[row, 2] = TopProducts.Take(10).Sum(p => p.TotalQuantity);
+                row += 2;
+
+                // Низкие остатки
+                worksheet.Cells[row, 1] = "НИЗКИЕ ОСТАТКИ И ПРОГНОЗ";
+                row++;
+                worksheet.Cells[row, 1] = "Товар";
+                worksheet.Cells[row, 2] = "Остаток";
+                worksheet.Cells[row, 3] = "Мин. остаток";
+                worksheet.Cells[row, 4] = "Прогноз, дней";
+                row++;
+                foreach (var item in LowStockItems)
+                {
+                    worksheet.Cells[row, 1] = item.ProductName;
+                    worksheet.Cells[row, 2] = item.CurrentStock;
+                    worksheet.Cells[row, 3] = item.MinStockLevel;
+                    worksheet.Cells[row, 4] = item.DaysUntilOutDisplay;
+                    row++;
+                }
+                row += 2;
+
+                // Последние продажи
+                worksheet.Cells[row, 1] = "ПОСЛЕДНИЕ ПРОДАЖИ";
+                row++;
+                worksheet.Cells[row, 1] = "ID продажи";
+                worksheet.Cells[row, 2] = "Дата";
+                worksheet.Cells[row, 3] = "Сумма, ₽";
+                worksheet.Cells[row, 4] = "Способ оплаты";
+                row++;
+                foreach (var sale in LastSales)
+                {
+                    worksheet.Cells[row, 1] = sale.SaleID;
+                    worksheet.Cells[row, 2] = sale.SaleDateTime.ToString("dd.MM.yyyy HH:mm");
+                    worksheet.Cells[row, 3] = sale.TotalAmount;
+                    worksheet.Cells[row, 4] = sale.PaymentMethod;
+                    row++;
+                }
+                worksheet.Cells[row, 1] = $"ИТОГО ПО {LastSales.Count} ПРОДАЖАМ";
+                worksheet.Cells[row, 3] = LastSales.Sum(s => s.TotalAmount);
+
+                // Автоматическая подгонка ширины столбцов
+                worksheet.Columns.AutoFit();
+
+                workbook.SaveAs(dialog.FileName);
+            }
+            catch (Exception ex)
+            {
+                MessageBox.Show($"Ошибка при экспорте в Excel: {ex.Message}", "Ошибка", MessageBoxButton.OK, MessageBoxImage.Error);
+                return;
+            }
+            finally
+            {
+                if (workbook != null) workbook.Close(false);
+                if (excel != null) excel.Quit();
+                ReleaseExcelObject(worksheet);
+                ReleaseExcelObject(workbook);
+                ReleaseExcelObject(excel);
+            }
+
+            System.Diagnostics.Process.Start(new System.Diagnostics.ProcessStartInfo(dialog.FileName) { UseShellExecute = true });
+            MessageBox.Show($"Дашборд экспортирован в Excel: {dialog.FileName}", "Успех", MessageBoxButton.OK, MessageBoxImage.Information);
+        }
+
+        // Вспомогательный метод для освобождения COM-объектов Excel
+        private void ReleaseExcelObject(object obj)
+        {
+            try
+            {
+                if (obj != null)
+                    System.Runtime.InteropServices.Marshal.ReleaseComObject(obj);
+            }
+            catch { }
+            finally { obj = null; }
+        }
+        public ObservableCollection<string> CashierSortOptions { get; } = new ObservableCollection<string> { "Выручка", "Продажи", "Имя" };
+        public ObservableCollection<string> LastSalesSortOptions { get; } = new ObservableCollection<string> { "Дата", "Сумма" };
         private void LoadCashiers()
         {
             using (var ctx = new KPMurtazinEntities())

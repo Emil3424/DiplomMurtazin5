@@ -9,14 +9,66 @@ using System.Data.Entity;
 using System.Diagnostics;
 using System.IO;
 using System.Linq;
+using System.Text;
 using System.Windows;
 using System.Windows.Input;
 
 namespace DiplomMurtazin.ViewModel
 {
+    public class ReturnReportItem
+    {
+        public int ReturnID { get; set; }
+        public int UnitID { get; set; }
+        public string ProductName { get; set; }
+        public DateTime ReturnDate { get; set; }
+        public string ReturnReason { get; set; }
+        public bool IsWarrantyCase { get; set; }
+        public decimal RefundAmount { get; set; }
+        public string Status { get; set; }
+        public string ProcessedBy { get; set; }
+    }
+
+    public class Torg12ReportItem
+    {
+        public int Torg12ID { get; set; }
+        public string DocumentNumber { get; set; }
+        public DateTime DocumentDate { get; set; }
+        public string ReceiverName { get; set; }
+        public string CreatedBy { get; set; }
+        public DateTime CreatedDate { get; set; }
+        public string Status { get; set; }
+        public int ItemsCount { get; set; }
+        public decimal TotalAmount { get; set; }
+        public string Notes { get; set; }
+    }
+
+    public class ProductHistoryItem
+    {
+        public DateTime EventDate { get; set; }
+        public string EventType { get; set; }
+        public string Description { get; set; }
+        public int Quantity { get; set; }
+        public decimal? Price { get; set; }
+        public string SourceDocument { get; set; }
+    }
+
+    public class ProductSelectionItem : BaseViewModel
+    {
+        public int ProductID { get; set; }
+        public string ProductName { get; set; }
+        private bool _isSelected;
+        public bool IsSelected
+        {
+            get => _isSelected;
+            set => Set(ref _isSelected, value);
+        }
+    }
+
     public class ReportsViewModel : BaseViewModel
     {
         private KPMurtazinEntities _context;
+
+        // Существующие отчёты
         private ObservableCollection<SalesReportItem> _salesReport;
         private ObservableCollection<SalesSummaryItem> _salesSummary;
         private ObservableCollection<StockReportItem> _stockReport;
@@ -28,48 +80,90 @@ namespace DiplomMurtazin.ViewModel
         public int OutOfStockCount => StockReport?.Count(s => s.CurrentStock == 0) ?? 0;
         public int BelowMinCount => StockReport?.Count(s => s.Status == "Ниже минимума") ?? 0;
 
-        public ObservableCollection<SalesReportItem> SalesReport
+        // Новые отчёты
+        private ObservableCollection<ReturnReportItem> _returnReport;
+        private DateTime _returnStartDate = DateTime.Today.AddMonths(-1);
+        private DateTime _returnEndDate = DateTime.Today;
+        private string _returnStatusFilter = "Все";
+        private bool? _isWarrantyFilter = null;
+
+        private ObservableCollection<Torg12ReportItem> _torg12Report;
+        private DateTime _torg12StartDate = DateTime.Today.AddMonths(-1);
+        private DateTime _torg12EndDate = DateTime.Today;
+        private string _torg12StatusFilter = "Все";
+        private string _torg12ReceiverFilter = "";
+
+        private ObservableCollection<ProductHistoryItem> _productHistory;
+        private ObservableCollection<Products> _allProducts;
+        private Products _selectedProductForHistory;
+
+        // Фильтр каталога товаров
+        private bool _enableProductFilter = false;
+        private ObservableCollection<Categories> _categories;
+        private Categories _selectedCategoryFilterForProducts;
+        private ObservableCollection<string> _productNames;
+        private ObservableCollection<ProductSelectionItem> _selectedProductItems;
+
+        // Свойства
+        public ObservableCollection<ReturnReportItem> ReturnReport { get => _returnReport; set => Set(ref _returnReport, value); }
+        public ObservableCollection<Torg12ReportItem> Torg12Report { get => _torg12Report; set => Set(ref _torg12Report, value); }
+        public ObservableCollection<ProductHistoryItem> ProductHistory { get => _productHistory; set => Set(ref _productHistory, value); }
+        public ObservableCollection<Products> AllProducts { get => _allProducts; set => Set(ref _allProducts, value); }
+        public Products SelectedProductForHistory { get => _selectedProductForHistory; set { if (Set(ref _selectedProductForHistory, value) && value != null) LoadProductHistory(); } }
+
+        public DateTime ReturnStartDate { get => _returnStartDate; set => Set(ref _returnStartDate, value); }
+        public DateTime ReturnEndDate { get => _returnEndDate; set => Set(ref _returnEndDate, value); }
+        public string ReturnStatusFilter { get => _returnStatusFilter; set => Set(ref _returnStatusFilter, value); }
+        public bool? IsWarrantyFilter { get => _isWarrantyFilter; set => Set(ref _isWarrantyFilter, value); }
+        public ObservableCollection<string> ReturnStatuses { get; } = new ObservableCollection<string> { "Все", "SOLD", "RETURNED", "DEFECTIVE" };
+        public ObservableCollection<string> WarrantyOptions { get; } = new ObservableCollection<string> { "Все", "Только гарантийные", "Только негарантийные" };
+        public string SelectedWarrantyOption
         {
-            get => _salesReport;
-            set => Set(ref _salesReport, value);
+            get => IsWarrantyFilter == null ? "Все" : (IsWarrantyFilter == true ? "Только гарантийные" : "Только негарантийные");
+            set
+            {
+                if (value == "Все") IsWarrantyFilter = null;
+                else if (value == "Только гарантийные") IsWarrantyFilter = true;
+                else IsWarrantyFilter = false;
+            }
         }
 
-        public ObservableCollection<SalesSummaryItem> SalesSummary
-        {
-            get => _salesSummary;
-            set => Set(ref _salesSummary, value);
-        }
+        public DateTime Torg12StartDate { get => _torg12StartDate; set => Set(ref _torg12StartDate, value); }
+        public DateTime Torg12EndDate { get => _torg12EndDate; set => Set(ref _torg12EndDate, value); }
+        public string Torg12StatusFilter { get => _torg12StatusFilter; set => Set(ref _torg12StatusFilter, value); }
+        public string Torg12ReceiverFilter { get => _torg12ReceiverFilter; set => Set(ref _torg12ReceiverFilter, value); }
+        public ObservableCollection<string> Torg12Statuses { get; } = new ObservableCollection<string> { "Все", "Draft", "Completed" };
 
-        public ObservableCollection<StockReportItem> StockReport
+        public bool EnableProductFilter { get => _enableProductFilter; set => Set(ref _enableProductFilter, value); }
+        public ObservableCollection<Categories> Categories { get => _categories; set => Set(ref _categories, value); }
+        public Categories SelectedCategoryFilterForProducts
         {
-            get => _stockReport;
-            set => Set(ref _stockReport, value);
+            get => _selectedCategoryFilterForProducts;
+            set
+            {
+                if (Set(ref _selectedCategoryFilterForProducts, value))
+                    UpdateProductListByCategory();
+            }
         }
-
-        public DateTime StartDate
+        public ObservableCollection<string> ProductNames { get => _productNames; set => Set(ref _productNames, value); }
+        public ObservableCollection<ProductSelectionItem> SelectedProductItems
         {
-            get => _startDate;
-            set => Set(ref _startDate, value);
+            get => _selectedProductItems;
+            set => Set(ref _selectedProductItems, value);
         }
+        public string SelectedProductsText => SelectedProductItems != null && SelectedProductItems.Any(x => x.IsSelected)
+            ? string.Join(", ", SelectedProductItems.Where(x => x.IsSelected).Select(x => x.ProductName))
+            : "Не выбрано";
 
-        public DateTime EndDate
-        {
-            get => _endDate;
-            set => Set(ref _endDate, value);
-        }
+        public ObservableCollection<SalesReportItem> SalesReport { get => _salesReport; set => Set(ref _salesReport, value); }
+        public ObservableCollection<SalesSummaryItem> SalesSummary { get => _salesSummary; set => Set(ref _salesSummary, value); }
+        public ObservableCollection<StockReportItem> StockReport { get => _stockReport; set => Set(ref _stockReport, value); }
+        public DateTime StartDate { get => _startDate; set => Set(ref _startDate, value); }
+        public DateTime EndDate { get => _endDate; set => Set(ref _endDate, value); }
+        public string StatusMessage { get => _statusMessage; set => Set(ref _statusMessage, value); }
+        public string StatusColor { get => _statusColor; set => Set(ref _statusColor, value); }
 
-        public string StatusMessage
-        {
-            get => _statusMessage;
-            set => Set(ref _statusMessage, value);
-        }
-
-        public string StatusColor
-        {
-            get => _statusColor;
-            set => Set(ref _statusColor, value);
-        }
-
+        // Команды
         public ICommand LoadedCommand { get; }
         public ICommand GenerateSalesReportCommand { get; }
         public ICommand GenerateStockReportCommand { get; }
@@ -83,26 +177,62 @@ namespace DiplomMurtazin.ViewModel
         public ICommand ExportProductCatalogCsvCommand { get; }
         public ICommand ExportProductCatalogExcelCommand { get; }
 
+        public ICommand GenerateReturnReportCommand { get; }
+        public ICommand GenerateTorg12ReportCommand { get; }
+        public ICommand GenerateProductHistoryCommand { get; }
+        public ICommand ExportReturnReportPdfCommand { get; }
+        public ICommand ExportReturnReportCsvCommand { get; }
+        public ICommand ExportReturnReportExcelCommand { get; }
+        public ICommand ExportTorg12ReportPdfCommand { get; }
+        public ICommand ExportTorg12ReportCsvCommand { get; }
+        public ICommand ExportTorg12ReportExcelCommand { get; }
+        public ICommand ExportProductHistoryPdfCommand { get; }
+        public ICommand ExportProductHistoryCsvCommand { get; }
+        public ICommand ExportProductHistoryExcelCommand { get; }
+        public ICommand ClearSelectedProductsCommand { get; }
+
         public ReportsViewModel()
         {
             LoadedCommand = new RelayCommand(OnLoaded);
             GenerateSalesReportCommand = new RelayCommand(GenerateSalesReport);
             GenerateStockReportCommand = new RelayCommand(GenerateStockReport);
-            ExportSalesReportPdfCommand = new RelayCommand(ExportSalesReportPdf, CanExportSalesReport);
-            ExportSalesReportCsvCommand = new RelayCommand(ExportSalesReportCsv, CanExportSalesReport);
-            ExportSalesReportExcelCommand = new RelayCommand(ExportSalesReportExcel, CanExportSalesReport);
-            ExportStockReportPdfCommand = new RelayCommand(ExportStockReportPdf, CanExportStockReport);
-            ExportStockReportCsvCommand = new RelayCommand(ExportStockReportCsv, CanExportStockReport);
-            ExportStockReportExcelCommand = new RelayCommand(ExportStockReportExcel, CanExportStockReport);
+
+            ExportSalesReportPdfCommand = new RelayCommand(ExportSalesReportPdf, _ => SalesReport != null && SalesReport.Any());
+            ExportSalesReportCsvCommand = new RelayCommand(ExportSalesReportCsv, _ => SalesReport != null && SalesReport.Any());
+            ExportSalesReportExcelCommand = new RelayCommand(ExportSalesReportExcel, _ => SalesReport != null && SalesReport.Any());
+            ExportStockReportPdfCommand = new RelayCommand(ExportStockReportPdf, _ => StockReport != null && StockReport.Any());
+            ExportStockReportCsvCommand = new RelayCommand(ExportStockReportCsv, _ => StockReport != null && StockReport.Any());
+            ExportStockReportExcelCommand = new RelayCommand(ExportStockReportExcel, _ => StockReport != null && StockReport.Any());
             ExportProductCatalogPdfCommand = new RelayCommand(ExportProductCatalogPdf);
             ExportProductCatalogCsvCommand = new RelayCommand(ExportProductCatalogCsv);
             ExportProductCatalogExcelCommand = new RelayCommand(ExportProductCatalogExcel);
 
+            GenerateReturnReportCommand = new RelayCommand(GenerateReturnReport);
+            GenerateTorg12ReportCommand = new RelayCommand(GenerateTorg12Report);
+            GenerateProductHistoryCommand = new RelayCommand(GenerateProductHistory);
+
+            ExportReturnReportPdfCommand = new RelayCommand(ExportReturnReportPdf, _ => ReturnReport != null && ReturnReport.Any());
+            ExportReturnReportCsvCommand = new RelayCommand(ExportReturnReportCsv, _ => ReturnReport != null && ReturnReport.Any());
+            ExportReturnReportExcelCommand = new RelayCommand(ExportReturnReportExcel, _ => ReturnReport != null && ReturnReport.Any());
+
+            ExportTorg12ReportPdfCommand = new RelayCommand(ExportTorg12ReportPdf, _ => Torg12Report != null && Torg12Report.Any());
+            ExportTorg12ReportCsvCommand = new RelayCommand(ExportTorg12ReportCsv, _ => Torg12Report != null && Torg12Report.Any());
+            ExportTorg12ReportExcelCommand = new RelayCommand(ExportTorg12ReportExcel, _ => Torg12Report != null && Torg12Report.Any());
+
+            ExportProductHistoryPdfCommand = new RelayCommand(ExportProductHistoryPdf, _ => ProductHistory != null && ProductHistory.Any());
+            ExportProductHistoryCsvCommand = new RelayCommand(ExportProductHistoryCsv, _ => ProductHistory != null && ProductHistory.Any());
+            ExportProductHistoryExcelCommand = new RelayCommand(ExportProductHistoryExcel, _ => ProductHistory != null && ProductHistory.Any());
+
+            ClearSelectedProductsCommand = new RelayCommand(_ => ClearSelectedProducts());
+
             StartDate = DateTime.Now.AddMonths(-1);
             EndDate = DateTime.Now;
-
             StatusColor = "#3498db";
             StatusMessage = "Готов к работе";
+
+            LoadAllProducts();
+            LoadCategories();
+            SelectedProductItems = new ObservableCollection<ProductSelectionItem>();
         }
 
         private void OnLoaded(object parameter)
@@ -111,6 +241,49 @@ namespace DiplomMurtazin.ViewModel
             _context.Configuration.ProxyCreationEnabled = false;
         }
 
+        private void LoadAllProducts()
+        {
+            using (var ctx = new KPMurtazinEntities())
+            {
+                AllProducts = new ObservableCollection<Products>(ctx.Products.OrderBy(p => p.ProductName).ToList());
+                ProductNames = new ObservableCollection<string>(AllProducts.Select(p => p.ProductName));
+                SelectedProductItems = new ObservableCollection<ProductSelectionItem>(
+                    AllProducts.Select(p => new ProductSelectionItem { ProductID = p.ProductID, ProductName = p.ProductName, IsSelected = false })
+                );
+            }
+        }
+
+        private void LoadCategories()
+        {
+            using (var ctx = new KPMurtazinEntities())
+            {
+                var cats = ctx.Categories.OrderBy(c => c.CategoryName).ToList();
+                cats.Insert(0, new Categories { CategoryID = 0, CategoryName = "Все категории" });
+                Categories = new ObservableCollection<Categories>(cats);
+                SelectedCategoryFilterForProducts = Categories.First();
+            }
+        }
+
+        private void UpdateProductListByCategory()
+        {
+            if (SelectedCategoryFilterForProducts == null) return;
+            if (SelectedCategoryFilterForProducts.CategoryID == 0)
+                ProductNames = new ObservableCollection<string>(AllProducts.Select(p => p.ProductName));
+            else
+            {
+                var catId = SelectedCategoryFilterForProducts.CategoryID;
+                ProductNames = new ObservableCollection<string>(AllProducts.Where(p => p.CategoryID == catId).Select(p => p.ProductName));
+            }
+        }
+
+        private void ClearSelectedProducts()
+        {
+            foreach (var item in SelectedProductItems)
+                item.IsSelected = false;
+            OnPropertyChanged(nameof(SelectedProductsText));
+        }
+
+        // ========== ОТЧЁТ ПО ПРОДАЖАМ ==========
         private void GenerateSalesReport(object parameter)
         {
             try
@@ -126,21 +299,18 @@ namespace DiplomMurtazin.ViewModel
                     {
                         SaleId = s.SaleID,
                         SaleDate = s.SaleDateTime,
-                        EmployeeName = s.Employees != null ?
-                            $"{s.Employees.LastName} {s.Employees.FirstName}" : "Неизвестно",
+                        EmployeeName = s.Employees != null ? $"{s.Employees.LastName} {s.Employees.FirstName}" : "Неизвестно",
                         PaymentMethod = s.PaymentMethod,
                         ItemsCount = s.SaleItems.Count,
                         TotalAmount = s.TotalAmount
                     }).OrderByDescending(s => s.SaleDate)
                 );
 
-                // Группировка по сотрудникам
                 SalesSummary = new ObservableCollection<SalesSummaryItem>(
                     sales.GroupBy(s => s.EmployeeID)
                          .Select(g => new SalesSummaryItem
                          {
-                             EmployeeName = g.First().Employees != null ?
-                                 $"{g.First().Employees.LastName} {g.First().Employees.FirstName}" : "Неизвестно",
+                             EmployeeName = g.First().Employees != null ? $"{g.First().Employees.LastName} {g.First().Employees.FirstName}" : "Неизвестно",
                              SalesCount = g.Count(),
                              TotalAmount = g.Sum(s => s.TotalAmount),
                              AverageCheck = g.Count() > 0 ? g.Sum(s => s.TotalAmount) / g.Count() : 0
@@ -149,7 +319,7 @@ namespace DiplomMurtazin.ViewModel
 
                 StatusMessage = $"Отчет по продажам сгенерирован. Продаж: {SalesReport.Count}";
                 StatusColor = "#27ae60";
-                AuditLogger.Log("REPORT_GENERATE", "SalesReport", $"Сформирован отчет по продажам за {StartDate:dd.MM.yyyy} - {EndDate:dd.MM.yyyy}", metadata: $"Rows={SalesReport.Count}");
+                AuditLogger.Log("REPORT_GENERATE", "SalesReport", $"Сформирован отчет по продажам за {StartDate:dd.MM.yyyy} - {EndDate:dd.MM.yyyy}");
             }
             catch (Exception ex)
             {
@@ -158,278 +328,13 @@ namespace DiplomMurtazin.ViewModel
             }
         }
 
-        private void GenerateStockReport(object parameter)
-        {
-            try
-            {
-                var products = _context.Products
-                    .Include(p => p.Categories)
-                    .ToList();
-
-                var stockBalances = _context.StockBalances
-                    .GroupBy(sb => sb.ProductID)
-                    .Select(g => new { ProductId = g.Key, TotalStock = g.Sum(sb => sb.Quantity) })
-                    .ToDictionary(x => x.ProductId, x => x.TotalStock);
-
-                StockReport = new ObservableCollection<StockReportItem>();
-
-                foreach (var product in products)
-                {
-                    int currentStock = stockBalances.ContainsKey(product.ProductID) ? stockBalances[product.ProductID] : 0;
-                    int minStock = product.MinStockLevel ?? 5;
-
-                    string status = currentStock == 0 ? "Отсутствует" :
-                                   currentStock < minStock ? "Ниже минимума" :
-                                   currentStock < minStock * 2 ? "Близко к минимуму" : "Норма";
-
-                    StockReport.Add(new StockReportItem
-                    {
-                        ProductId = product.ProductID,
-                        ProductName = product.ProductName,
-                        Category = product.Categories?.CategoryName ?? "Без категории",
-                        CurrentStock = currentStock,
-                        MinStockLevel = minStock,
-                        Status = status,
-                        UnitPrice = product.UnitPrice,
-                        TotalValue = currentStock * product.UnitPrice
-                    });
-                }
-
-                StatusMessage = $"Отчет по остаткам сгенерирован. Товаров: {StockReport.Count}";
-                StatusColor = "#27ae60";
-                AuditLogger.Log("REPORT_GENERATE", "StockReport", "Сформирован отчет по остаткам", metadata: $"Rows={StockReport.Count}");
-            }
-            catch (Exception ex)
-            {
-                StatusMessage = $"Ошибка генерации отчета: {ex.Message}";
-                StatusColor = "#e74c3c";
-            }
-        }
-
-        private bool CanExportSalesReport(object parameter)
-        {
-            return SalesReport != null && SalesReport.Count > 0;
-        }
-
-        private bool CanExportStockReport(object parameter)
-        {
-            return StockReport != null && StockReport.Count > 0;
-        }
-
+        // ========== ЭКСПОРТ ОТЧЁТА ПО ПРОДАЖАМ ==========
         private void ExportSalesReportPdf(object parameter)
         {
-            try
-            {
-                var dialog = new SaveFileDialog
-                {
-                    Filter = "PDF files (*.pdf)|*.pdf",
-                    FileName = $"Отчет_по_продажам_{DateTime.Now:yyyyMMddHHmmss}.pdf",
-                    DefaultExt = ".pdf"
-                };
-
-                if (dialog.ShowDialog() == true)
-                {
-                    CreateSalesReportPdf(dialog.FileName);
-                    OnReportSaved(dialog.FileName, "Отчет по продажам", "PDF");
-                }
-            }
-            catch (Exception ex)
-            {
-                StatusMessage = $"Ошибка сохранения: {ex.Message}";
-                StatusColor = "#e74c3c";
-            }
-        }
-
-        private void ExportStockReportPdf(object parameter)
-        {
-            try
-            {
-                var dialog = new SaveFileDialog
-                {
-                    Filter = "PDF files (*.pdf)|*.pdf",
-                    FileName = $"Отчет_по_остаткам_{DateTime.Now:yyyyMMddHHmmss}.pdf",
-                    DefaultExt = ".pdf"
-                };
-
-                if (dialog.ShowDialog() == true)
-                {
-                    CreateStockReportPdf(dialog.FileName);
-                    OnReportSaved(dialog.FileName, "Отчет по остаткам", "PDF");
-                }
-            }
-            catch (Exception ex)
-            {
-                StatusMessage = $"Ошибка сохранения: {ex.Message}";
-                StatusColor = "#e74c3c";
-            }
-        }
-
-        private void ExportProductCatalogExcel(object parameter)
-        {
-            try
-            {
-                var dialog = new SaveFileDialog
-                {
-                    Filter = "Excel files (*.xls)|*.xls",
-                    FileName = $"Каталог_товаров_{DateTime.Now:yyyyMMddHHmmss}.xls",
-                    DefaultExt = ".xls"
-                };
-
-                if (dialog.ShowDialog() == true)
-                {
-                    CreateProductCatalogExcel(dialog.FileName);
-                    OnReportSaved(dialog.FileName, "Каталог товаров", "Excel");
-                }
-            }
-            catch (Exception ex)
-            {
-                StatusMessage = $"Ошибка сохранения: {ex.Message}";
-                StatusColor = "#e74c3c";
-            }
-        }
-
-        private void ExportSalesReportCsv(object parameter)
-        {
-            try
-            {
-                var dialog = new SaveFileDialog
-                {
-                    Filter = "CSV files (*.csv)|*.csv",
-                    FileName = $"Отчет_по_продажам_{DateTime.Now:yyyyMMddHHmmss}.csv",
-                    DefaultExt = ".csv"
-                };
-
-                if (dialog.ShowDialog() == true)
-                {
-                    CreateSalesReportCsv(dialog.FileName);
-                    OnReportSaved(dialog.FileName, "Отчет по продажам", "CSV");
-                }
-            }
-            catch (Exception ex)
-            {
-                StatusMessage = $"Ошибка сохранения: {ex.Message}";
-                StatusColor = "#e74c3c";
-            }
-        }
-
-        private void ExportSalesReportExcel(object parameter)
-        {
-            try
-            {
-                var dialog = new SaveFileDialog
-                {
-                    Filter = "Excel files (*.xls)|*.xls",
-                    FileName = $"Отчет_по_продажам_{DateTime.Now:yyyyMMddHHmmss}.xls",
-                    DefaultExt = ".xls"
-                };
-
-                if (dialog.ShowDialog() == true)
-                {
-                    CreateSalesReportExcel(dialog.FileName);
-                    OnReportSaved(dialog.FileName, "Отчет по продажам", "Excel");
-                }
-            }
-            catch (Exception ex)
-            {
-                StatusMessage = $"Ошибка сохранения: {ex.Message}";
-                StatusColor = "#e74c3c";
-            }
-        }
-
-        private void ExportStockReportCsv(object parameter)
-        {
-            try
-            {
-                var dialog = new SaveFileDialog
-                {
-                    Filter = "CSV files (*.csv)|*.csv",
-                    FileName = $"Отчет_по_остаткам_{DateTime.Now:yyyyMMddHHmmss}.csv",
-                    DefaultExt = ".csv"
-                };
-
-                if (dialog.ShowDialog() == true)
-                {
-                    CreateStockReportCsv(dialog.FileName);
-                    OnReportSaved(dialog.FileName, "Отчет по остаткам", "CSV");
-                }
-            }
-            catch (Exception ex)
-            {
-                StatusMessage = $"Ошибка сохранения: {ex.Message}";
-                StatusColor = "#e74c3c";
-            }
-        }
-
-        private void ExportStockReportExcel(object parameter)
-        {
-            try
-            {
-                var dialog = new SaveFileDialog
-                {
-                    Filter = "Excel files (*.xls)|*.xls",
-                    FileName = $"Отчет_по_остаткам_{DateTime.Now:yyyyMMddHHmmss}.xls",
-                    DefaultExt = ".xls"
-                };
-
-                if (dialog.ShowDialog() == true)
-                {
-                    CreateStockReportExcel(dialog.FileName);
-                    OnReportSaved(dialog.FileName, "Отчет по остаткам", "Excel");
-                }
-            }
-            catch (Exception ex)
-            {
-                StatusMessage = $"Ошибка сохранения: {ex.Message}";
-                StatusColor = "#e74c3c";
-            }
-        }
-
-        private void ExportProductCatalogPdf(object parameter)
-        {
-            try
-            {
-                var dialog = new SaveFileDialog
-                {
-                    Filter = "PDF files (*.pdf)|*.pdf",
-                    FileName = $"Каталог_товаров_{DateTime.Now:yyyyMMddHHmmss}.pdf",
-                    DefaultExt = ".pdf"
-                };
-
-                if (dialog.ShowDialog() == true)
-                {
-                    CreateProductCatalogPdf(dialog.FileName);
-                    OnReportSaved(dialog.FileName, "Каталог товаров", "PDF");
-                }
-            }
-            catch (Exception ex)
-            {
-                StatusMessage = $"Ошибка сохранения: {ex.Message}";
-                StatusColor = "#e74c3c";
-            }
-        }
-
-        private void ExportProductCatalogCsv(object parameter)
-        {
-            try
-            {
-                var dialog = new SaveFileDialog
-                {
-                    Filter = "CSV files (*.csv)|*.csv",
-                    FileName = $"Каталог_товаров_{DateTime.Now:yyyyMMddHHmmss}.csv",
-                    DefaultExt = ".csv"
-                };
-
-                if (dialog.ShowDialog() == true)
-                {
-                    CreateProductCatalogCsv(dialog.FileName);
-                    OnReportSaved(dialog.FileName, "Каталог товаров", "CSV");
-                }
-            }
-            catch (Exception ex)
-            {
-                StatusMessage = $"Ошибка сохранения: {ex.Message}";
-                StatusColor = "#e74c3c";
-            }
+            var dialog = new SaveFileDialog { Filter = "PDF files (*.pdf)|*.pdf", FileName = $"Отчет_по_продажам_{DateTime.Now:yyyyMMddHHmmss}.pdf" };
+            if (dialog.ShowDialog() != true) return;
+            CreateSalesReportPdf(dialog.FileName);
+            OpenFile(dialog.FileName);
         }
 
         private void CreateSalesReportPdf(string filename)
@@ -437,124 +342,139 @@ namespace DiplomMurtazin.ViewModel
             using (var document = new PdfDocument())
             {
                 document.Info.Title = $"Отчет по продажам за {StartDate:dd.MM.yyyy} - {EndDate:dd.MM.yyyy}";
-                document.Info.Creator = "KPMurtazin";
-
                 var page = document.AddPage();
-                page.Width = XUnit.FromPoint(595); // A4 ширина
-                page.Height = XUnit.FromPoint(842); // A4 высота
-
-                // Не используем using для gfx, а создаем новую переменную при смене страницы
+                page.Width = XUnit.FromPoint(595);
+                page.Height = XUnit.FromPoint(842);
                 var gfx = XGraphics.FromPdfPage(page);
+                var fontTitle = new XFont("Arial", 14, XFontStyleEx.Bold);
+                var fontHeader = new XFont("Arial", 10, XFontStyleEx.Bold);
+                var fontNormal = new XFont("Arial", 9, XFontStyleEx.Regular);
+                double y = 30, left = 40;
 
-                try
+                gfx.DrawString("ОТЧЕТ ПО ПРОДАЖАМ", fontTitle, XBrushes.DarkBlue, left, y);
+                y += 20;
+                gfx.DrawString($"Период: {StartDate:dd.MM.yyyy} - {EndDate:dd.MM.yyyy}", fontNormal, XBrushes.Black, left, y);
+                y += 20;
+                gfx.DrawString($"Дата формирования: {DateTime.Now:dd.MM.yyyy HH:mm}", fontNormal, XBrushes.Black, left, y);
+                y += 25;
+
+                if (SalesSummary != null && SalesSummary.Any())
                 {
-                    var fontTitle = new XFont("Arial", 16, XFontStyleEx.Bold);
-                    var fontHeader = new XFont("Arial", 10, XFontStyleEx.Bold);
-                    var fontNormal = new XFont("Arial", 9, XFontStyleEx.Regular);
-
-                    double yPos = 30;
-                    double leftMargin = 40;
-
-                    // Заголовок
-                    gfx.DrawString("ОТЧЕТ ПО ПРОДАЖАМ", fontTitle, XBrushes.DarkBlue, leftMargin, yPos);
-                    yPos += 25;
-                    gfx.DrawString($"Период: {StartDate:dd.MM.yyyy} - {EndDate:dd.MM.yyyy}", fontNormal, XBrushes.Black, leftMargin, yPos);
-                    yPos += 25;
-                    gfx.DrawString($"Дата формирования: {DateTime.Now:dd.MM.yyyy HH:mm}", fontNormal, XBrushes.Black, leftMargin, yPos);
-                    yPos += 30;
-
-                    // Сводка
-                    if (SalesSummary != null && SalesSummary.Count > 0)
+                    gfx.DrawString("СВОДКА ПО СОТРУДНИКАМ", fontHeader, XBrushes.DarkBlue, left, y);
+                    y += 20;
+                    gfx.DrawString("Сотрудник", fontHeader, XBrushes.Black, left, y);
+                    gfx.DrawString("Продаж", fontHeader, XBrushes.Black, left + 200, y);
+                    gfx.DrawString("Сумма", fontHeader, XBrushes.Black, left + 280, y);
+                    gfx.DrawString("Ср. чек", fontHeader, XBrushes.Black, left + 360, y);
+                    y += 15;
+                    foreach (var item in SalesSummary)
                     {
-                        gfx.DrawString("СВОДКА ПО СОТРУДНИКАМ", fontHeader, XBrushes.DarkBlue, leftMargin, yPos);
-                        yPos += 20;
-
-                        // Заголовки таблицы
-                        gfx.DrawString("Сотрудник", fontHeader, XBrushes.Black, leftMargin, yPos);
-                        gfx.DrawString("Продаж", fontHeader, XBrushes.Black, leftMargin + 200, yPos);
-                        gfx.DrawString("Сумма", fontHeader, XBrushes.Black, leftMargin + 280, yPos);
-                        gfx.DrawString("Ср. чек", fontHeader, XBrushes.Black, leftMargin + 360, yPos);
-                        yPos += 15;
-
-                        foreach (var item in SalesSummary)
-                        {
-                            gfx.DrawString(item.EmployeeName, fontNormal, XBrushes.Black, leftMargin, yPos);
-                            gfx.DrawString(item.SalesCount.ToString(), fontNormal, XBrushes.Black, leftMargin + 200, yPos);
-                            gfx.DrawString(item.TotalAmount.ToString("F2") + " ₽", fontNormal, XBrushes.Black, leftMargin + 280, yPos);
-                            gfx.DrawString(item.AverageCheck.ToString("F2") + " ₽", fontNormal, XBrushes.Black, leftMargin + 360, yPos);
-                            yPos += 15;
-                        }
-                        yPos += 20;
+                        gfx.DrawString(item.EmployeeName, fontNormal, XBrushes.Black, left, y);
+                        gfx.DrawString(item.SalesCount.ToString(), fontNormal, XBrushes.Black, left + 200, y);
+                        gfx.DrawString($"{item.TotalAmount:F2} ₽", fontNormal, XBrushes.Black, left + 280, y);
+                        gfx.DrawString($"{item.AverageCheck:F2} ₽", fontNormal, XBrushes.Black, left + 360, y);
+                        y += 15;
                     }
-
-                    // Детали продаж
-                    gfx.DrawString("ДЕТАЛИ ПРОДАЖ", fontHeader, XBrushes.DarkBlue, leftMargin, yPos);
-                    yPos += 20;
-
-                    // Заголовки деталей
-                    gfx.DrawString("№", fontHeader, XBrushes.Black, leftMargin, yPos);
-                    gfx.DrawString("Дата", fontHeader, XBrushes.Black, leftMargin + 40, yPos);
-                    gfx.DrawString("Сотрудник", fontHeader, XBrushes.Black, leftMargin + 120, yPos);
-                    gfx.DrawString("Способ оплаты", fontHeader, XBrushes.Black, leftMargin + 250, yPos);
-                    gfx.DrawString("Кол-во", fontHeader, XBrushes.Black, leftMargin + 350, yPos);
-                    gfx.DrawString("Сумма", fontHeader, XBrushes.Black, leftMargin + 400, yPos);
-                    yPos += 15;
-
-                    int count = 0;
-                    foreach (var item in SalesReport.Take(50)) // Ограничим для примера
-                    {
-                        if (yPos > page.Height.Point - 50)
-                        {
-                            // Новая страница
-                            page = document.AddPage();
-                            page.Width = XUnit.FromPoint(595);
-                            page.Height = XUnit.FromPoint(842);
-
-                            // Освобождаем предыдущий gfx и создаем новый
-                            gfx.Dispose();
-                            gfx = XGraphics.FromPdfPage(page);
-
-                            yPos = 30;
-
-                            // Повторяем заголовки на новой странице
-                            gfx.DrawString("№", fontHeader, XBrushes.Black, leftMargin, yPos);
-                            gfx.DrawString("Дата", fontHeader, XBrushes.Black, leftMargin + 40, yPos);
-                            gfx.DrawString("Сотрудник", fontHeader, XBrushes.Black, leftMargin + 120, yPos);
-                            gfx.DrawString("Способ оплаты", fontHeader, XBrushes.Black, leftMargin + 250, yPos);
-                            gfx.DrawString("Кол-во", fontHeader, XBrushes.Black, leftMargin + 350, yPos);
-                            gfx.DrawString("Сумма", fontHeader, XBrushes.Black, leftMargin + 400, yPos);
-                            yPos += 15;
-                        }
-
-                        gfx.DrawString(item.SaleId.ToString(), fontNormal, XBrushes.Black, leftMargin, yPos);
-                        gfx.DrawString(item.SaleDate.ToString("dd.MM.yy HH:mm"), fontNormal, XBrushes.Black, leftMargin + 40, yPos);
-                        gfx.DrawString(item.EmployeeName, fontNormal, XBrushes.Black, leftMargin + 120, yPos);
-                        gfx.DrawString(item.PaymentMethod, fontNormal, XBrushes.Black, leftMargin + 250, yPos);
-                        gfx.DrawString(item.ItemsCount.ToString(), fontNormal, XBrushes.Black, leftMargin + 350, yPos);
-                        gfx.DrawString(item.TotalAmount.ToString("F2") + " ₽", fontNormal, XBrushes.Black, leftMargin + 400, yPos);
-                        yPos += 15;
-                        count++;
-                    }
-
-                    if (SalesReport.Count > 50)
-                    {
-                        yPos += 10;
-                        gfx.DrawString($"... и еще {SalesReport.Count - 50} записей", fontNormal, XBrushes.Gray, leftMargin, yPos);
-                    }
-
-                    // Итог
-                    yPos = page.Height.Point - 50;
-                    gfx.DrawString("────────────────────────────────────", fontNormal, XBrushes.Black, leftMargin, yPos);
-                    yPos += 15;
-                    gfx.DrawString($"ОБЩИЙ ИТОГ: {SalesReport.Sum(s => s.TotalAmount):F2} ₽", fontHeader, XBrushes.DarkBlue, leftMargin, yPos);
-                }
-                finally
-                {
-                    gfx.Dispose();
+                    y += 10;
                 }
 
+                gfx.DrawString("ДЕТАЛИ ПРОДАЖ", fontHeader, XBrushes.DarkBlue, left, y);
+                y += 20;
+                gfx.DrawString("№", fontHeader, XBrushes.Black, left, y);
+                gfx.DrawString("Дата", fontHeader, XBrushes.Black, left + 40, y);
+                gfx.DrawString("Сотрудник", fontHeader, XBrushes.Black, left + 120, y);
+                gfx.DrawString("Сумма", fontHeader, XBrushes.Black, left + 350, y);
+                y += 15;
+
+                foreach (var sale in SalesReport.Take(50))
+                {
+                    if (y > page.Height.Point - 40)
+                    {
+                        page = document.AddPage();
+                        gfx.Dispose();
+                        gfx = XGraphics.FromPdfPage(page);
+                        y = 30;
+                    }
+                    gfx.DrawString(sale.SaleId.ToString(), fontNormal, XBrushes.Black, left, y);
+                    gfx.DrawString(sale.SaleDate.ToString("dd.MM.yy HH:mm"), fontNormal, XBrushes.Black, left + 40, y);
+                    gfx.DrawString(sale.EmployeeName, fontNormal, XBrushes.Black, left + 120, y);
+                    gfx.DrawString($"{sale.TotalAmount:F2} ₽", fontNormal, XBrushes.Black, left + 350, y);
+                    y += 15;
+                }
+                gfx.DrawString($"ОБЩИЙ ИТОГ: {SalesReport.Sum(s => s.TotalAmount):F2} ₽", fontNormal, XBrushes.Black, left, y + 10);
+                gfx.Dispose();
                 document.Save(filename);
             }
+        }
+
+        private void ExportSalesReportCsv(object parameter)
+        {
+            var dialog = new SaveFileDialog { Filter = "CSV files (*.csv)|*.csv", FileName = $"Отчет_по_продажам_{DateTime.Now:yyyyMMddHHmmss}.csv" };
+            if (dialog.ShowDialog() != true) return;
+            using (var writer = new StreamWriter(dialog.FileName, false, Encoding.UTF8))
+            {
+                writer.WriteLine("ID продажи;Дата;Сотрудник;Способ оплаты;Позиций;Сумма");
+                foreach (var s in SalesReport)
+                    writer.WriteLine($"{s.SaleId};{s.SaleDate:dd.MM.yyyy HH:mm};{EscapeCsv(s.EmployeeName)};{EscapeCsv(s.PaymentMethod)};{s.ItemsCount};{s.TotalAmount:F2}");
+            }
+            OpenFile(dialog.FileName);
+        }
+
+        private void ExportSalesReportExcel(object parameter)
+        {
+            var dialog = new SaveFileDialog { Filter = "Excel files (*.xls)|*.xls", FileName = $"Отчет_по_продажам_{DateTime.Now:yyyyMMddHHmmss}.xls" };
+            if (dialog.ShowDialog() != true) return;
+            using (var writer = new StreamWriter(dialog.FileName, false, Encoding.Unicode))
+            {
+                writer.WriteLine("ID продажи\tДата\tСотрудник\tСпособ оплаты\tПозиций\tСумма");
+                foreach (var s in SalesReport)
+                    writer.WriteLine($"{s.SaleId}\t{s.SaleDate:dd.MM.yyyy HH:mm}\t{s.EmployeeName}\t{s.PaymentMethod}\t{s.ItemsCount}\t{s.TotalAmount:F2}");
+            }
+            OpenFile(dialog.FileName);
+        }
+
+        // ========== ОТЧЁТ ПО ОСТАТКАМ ==========
+        private void GenerateStockReport(object parameter)
+        {
+            try
+            {
+                var products = _context.Products.Include(p => p.Categories).ToList();
+                var stockBalances = _context.StockBalances.GroupBy(sb => sb.ProductID)
+                    .ToDictionary(g => g.Key, g => g.Sum(sb => sb.Quantity));
+                StockReport = new ObservableCollection<StockReportItem>();
+                foreach (var p in products)
+                {
+                    int current = stockBalances.ContainsKey(p.ProductID) ? stockBalances[p.ProductID] : 0;
+                    int min = p.MinStockLevel ?? 5;
+                    string status = current == 0 ? "Отсутствует" : current < min ? "Ниже минимума" : current < min * 2 ? "Близко к минимуму" : "Норма";
+                    StockReport.Add(new StockReportItem
+                    {
+                        ProductId = p.ProductID,
+                        ProductName = p.ProductName,
+                        Category = p.Categories?.CategoryName ?? "Без категории",
+                        CurrentStock = current,
+                        MinStockLevel = min,
+                        Status = status,
+                        UnitPrice = p.UnitPrice,
+                        TotalValue = current * p.UnitPrice
+                    });
+                }
+                StatusMessage = $"Отчет по остаткам сгенерирован. Товаров: {StockReport.Count}";
+                StatusColor = "#27ae60";
+            }
+            catch (Exception ex)
+            {
+                StatusMessage = $"Ошибка генерации отчета: {ex.Message}";
+                StatusColor = "#e74c3c";
+            }
+        }
+
+        private void ExportStockReportPdf(object parameter)
+        {
+            var dialog = new SaveFileDialog { Filter = "PDF files (*.pdf)|*.pdf", FileName = $"Отчет_по_остаткам_{DateTime.Now:yyyyMMddHHmmss}.pdf" };
+            if (dialog.ShowDialog() != true) return;
+            CreateStockReportPdf(dialog.FileName);
+            OpenFile(dialog.FileName);
         }
 
         private void CreateStockReportPdf(string filename)
@@ -562,215 +482,474 @@ namespace DiplomMurtazin.ViewModel
             using (var document = new PdfDocument())
             {
                 document.Info.Title = "Отчет по остаткам товаров";
-                document.Info.Creator = "KPMurtazin";
-
                 var page = document.AddPage();
                 page.Width = XUnit.FromPoint(595);
                 page.Height = XUnit.FromPoint(842);
-
                 var gfx = XGraphics.FromPdfPage(page);
+                var fontTitle = new XFont("Arial", 14, XFontStyleEx.Bold);
+                var fontHeader = new XFont("Arial", 10, XFontStyleEx.Bold);
+                var fontNormal = new XFont("Arial", 9, XFontStyleEx.Regular);
+                double y = 30, left = 40;
 
-                try
+                gfx.DrawString("ОТЧЕТ ПО ОСТАТКАМ", fontTitle, XBrushes.DarkBlue, left, y);
+                y += 25;
+                gfx.DrawString($"Дата формирования: {DateTime.Now:dd.MM.yyyy HH:mm}", fontNormal, XBrushes.Black, left, y);
+                y += 20;
+                gfx.DrawString($"Всего товаров: {StockReport.Count}", fontNormal, XBrushes.Black, left, y);
+                y += 15;
+                gfx.DrawString($"Отсутствуют: {StockReport.Count(s => s.CurrentStock == 0)}", fontNormal, XBrushes.Red, left, y);
+                y += 15;
+                gfx.DrawString($"Ниже минимума: {StockReport.Count(s => s.Status == "Ниже минимума")}", fontNormal, XBrushes.Orange, left, y);
+                y += 20;
+
+                gfx.DrawString("Товар", fontHeader, XBrushes.Black, left, y);
+                gfx.DrawString("Категория", fontHeader, XBrushes.Black, left + 180, y);
+                gfx.DrawString("Остаток", fontHeader, XBrushes.Black, left + 280, y);
+                gfx.DrawString("Статус", fontHeader, XBrushes.Black, left + 380, y);
+                y += 15;
+
+                foreach (var item in StockReport.OrderBy(s => s.Status).ThenBy(s => s.ProductName).Take(100))
                 {
-                    var fontTitle = new XFont("Arial", 16, XFontStyleEx.Bold);
-                    var fontHeader = new XFont("Arial", 10, XFontStyleEx.Bold);
-                    var fontNormal = new XFont("Arial", 9, XFontStyleEx.Regular);
-
-                    double yPos = 30;
-                    double leftMargin = 40;
-
-                    // Заголовок
-                    gfx.DrawString("ОТЧЕТ ПО ОСТАТКАМ ТОВАРОВ", fontTitle, XBrushes.DarkBlue, leftMargin, yPos);
-                    yPos += 25;
-                    gfx.DrawString($"Дата формирования: {DateTime.Now:dd.MM.yyyy HH:mm}", fontNormal, XBrushes.Black, leftMargin, yPos);
-                    yPos += 30;
-
-                    // Сводка
-                    int totalProducts = StockReport.Count;
-                    int outOfStock = StockReport.Count(s => s.CurrentStock == 0);
-                    int belowMin = StockReport.Count(s => s.Status == "Ниже минимума");
-                    decimal totalValue = StockReport.Sum(s => s.TotalValue);
-
-                    gfx.DrawString("СВОДКА", fontHeader, XBrushes.DarkBlue, leftMargin, yPos);
-                    yPos += 20;
-                    gfx.DrawString($"Всего товаров: {totalProducts}", fontNormal, XBrushes.Black, leftMargin, yPos);
-                    yPos += 15;
-                    gfx.DrawString($"Отсутствуют: {outOfStock}", fontNormal, XBrushes.Red, leftMargin, yPos);
-                    yPos += 15;
-                    gfx.DrawString($"Ниже минимума: {belowMin}", fontNormal, XBrushes.Orange, leftMargin, yPos);
-                    yPos += 15;
-                    gfx.DrawString($"Общая стоимость: {totalValue:F2} ₽", fontNormal, XBrushes.Black, leftMargin, yPos);
-                    yPos += 25;
-
-                    // Таблица остатков
-                    gfx.DrawString("ДЕТАЛИ", fontHeader, XBrushes.DarkBlue, leftMargin, yPos);
-                    yPos += 20;
-
-                    // Заголовки
-                    gfx.DrawString("Товар", fontHeader, XBrushes.Black, leftMargin, yPos);
-                    gfx.DrawString("Категория", fontHeader, XBrushes.Black, leftMargin + 180, yPos);
-                    gfx.DrawString("Остаток", fontHeader, XBrushes.Black, leftMargin + 280, yPos);
-                    gfx.DrawString("Мин.", fontHeader, XBrushes.Black, leftMargin + 340, yPos);
-                    gfx.DrawString("Статус", fontHeader, XBrushes.Black, leftMargin + 380, yPos);
-                    gfx.DrawString("Стоимость", fontHeader, XBrushes.Black, leftMargin + 440, yPos);
-                    yPos += 15;
-
-                    foreach (var item in StockReport.OrderBy(s => s.Status).ThenBy(s => s.ProductName))
+                    if (y > page.Height.Point - 40)
                     {
-                        if (yPos > page.Height.Point - 50)
-                        {
-                            page = document.AddPage();
-                            page.Width = XUnit.FromPoint(595);
-                            page.Height = XUnit.FromPoint(842);
-
-                            gfx.Dispose();
-                            gfx = XGraphics.FromPdfPage(page);
-
-                            yPos = 30;
-
-                            // Повторяем заголовки
-                            gfx.DrawString("Товар", fontHeader, XBrushes.Black, leftMargin, yPos);
-                            gfx.DrawString("Категория", fontHeader, XBrushes.Black, leftMargin + 180, yPos);
-                            gfx.DrawString("Остаток", fontHeader, XBrushes.Black, leftMargin + 280, yPos);
-                            gfx.DrawString("Мин.", fontHeader, XBrushes.Black, leftMargin + 340, yPos);
-                            gfx.DrawString("Статус", fontHeader, XBrushes.Black, leftMargin + 380, yPos);
-                            gfx.DrawString("Стоимость", fontHeader, XBrushes.Black, leftMargin + 440, yPos);
-                            yPos += 15;
-                        }
-
-                        XBrush statusBrush = item.Status == "Норма" ? XBrushes.Green :
-                                            item.Status == "Ниже минимума" ? XBrushes.Red :
-                                            item.Status == "Близко к минимуму" ? XBrushes.Orange : XBrushes.Gray;
-
-                        gfx.DrawString(TruncateString(item.ProductName, 25), fontNormal, XBrushes.Black, leftMargin, yPos);
-                        gfx.DrawString(TruncateString(item.Category, 15), fontNormal, XBrushes.Black, leftMargin + 180, yPos);
-                        gfx.DrawString(item.CurrentStock.ToString(), fontNormal, XBrushes.Black, leftMargin + 280, yPos);
-                        gfx.DrawString(item.MinStockLevel.ToString(), fontNormal, XBrushes.Black, leftMargin + 340, yPos);
-                        gfx.DrawString(item.Status, fontNormal, statusBrush, leftMargin + 380, yPos);
-                        gfx.DrawString(item.TotalValue.ToString("F2") + " ₽", fontNormal, XBrushes.Black, leftMargin + 440, yPos);
-                        yPos += 15;
+                        page = document.AddPage();
+                        gfx.Dispose();
+                        gfx = XGraphics.FromPdfPage(page);
+                        y = 30;
                     }
+                    XBrush statusBrush = item.Status == "Норма" ? XBrushes.Green : item.Status == "Ниже минимума" ? XBrushes.Red : XBrushes.Orange;
+                    gfx.DrawString(TruncateString(item.ProductName, 30), fontNormal, XBrushes.Black, left, y);
+                    gfx.DrawString(TruncateString(item.Category, 20), fontNormal, XBrushes.Black, left + 180, y);
+                    gfx.DrawString(item.CurrentStock.ToString(), fontNormal, XBrushes.Black, left + 280, y);
+                    gfx.DrawString(item.Status, fontNormal, statusBrush, left + 380, y);
+                    y += 15;
                 }
-                finally
-                {
-                    gfx.Dispose();
-                }
-
+                gfx.Dispose();
                 document.Save(filename);
             }
         }
 
-        private void CreateProductCatalogCsv(string filename)
+        private void ExportStockReportCsv(object parameter)
         {
-            var products = _context.Products
-                .Include(p => p.Categories)
-                .ToList();
-
-            var stockBalances = _context.StockBalances
-                .GroupBy(sb => sb.ProductID)
-                .Select(g => new { ProductId = g.Key, TotalStock = g.Sum(sb => sb.Quantity) })
-                .ToDictionary(x => x.ProductId, x => x.TotalStock);
-
-            using (var writer = new StreamWriter(filename, false, System.Text.Encoding.UTF8))
+            var dialog = new SaveFileDialog { Filter = "CSV files (*.csv)|*.csv", FileName = $"Отчет_по_остаткам_{DateTime.Now:yyyyMMddHHmmss}.csv" };
+            if (dialog.ShowDialog() != true) return;
+            using (var writer = new StreamWriter(dialog.FileName, false, Encoding.UTF8))
             {
-                // Заголовки
-                writer.WriteLine("ID;Наименование;Категория;Штрих-код;Производитель;Модель;Цена;Гарантия (мес);Остаток");
+                writer.WriteLine("ID;Наименование;Категория;Остаток;Мин.остаток;Статус;Цена;Стоимость");
+                foreach (var s in StockReport)
+                    writer.WriteLine($"{s.ProductId};{EscapeCsv(s.ProductName)};{EscapeCsv(s.Category)};{s.CurrentStock};{s.MinStockLevel};{EscapeCsv(s.Status)};{s.UnitPrice:F2};{s.TotalValue:F2}");
+            }
+            OpenFile(dialog.FileName);
+        }
 
-                // Данные
-                foreach (var product in products.OrderBy(p => p.ProductName))
+        private void ExportStockReportExcel(object parameter)
+        {
+            var dialog = new SaveFileDialog { Filter = "Excel files (*.xls)|*.xls", FileName = $"Отчет_по_остаткам_{DateTime.Now:yyyyMMddHHmmss}.xls" };
+            if (dialog.ShowDialog() != true) return;
+            using (var writer = new StreamWriter(dialog.FileName, false, Encoding.Unicode))
+            {
+                writer.WriteLine("ID\tНаименование\tКатегория\tОстаток\tМин.остаток\tСтатус\tЦена\tСтоимость");
+                foreach (var s in StockReport)
+                    writer.WriteLine($"{s.ProductId}\t{s.ProductName}\t{s.Category}\t{s.CurrentStock}\t{s.MinStockLevel}\t{s.Status}\t{s.UnitPrice:F2}\t{s.TotalValue:F2}");
+            }
+            OpenFile(dialog.FileName);
+        }
+
+        // ========== ОТЧЁТ ПО ВОЗВРАТАМ ==========
+        private void GenerateReturnReport(object parameter)
+        {
+            try
+            {
+                using (var ctx = new KPMurtazinEntities())
                 {
-                    int stock = stockBalances.ContainsKey(product.ProductID) ? stockBalances[product.ProductID] : 0;
-
-                    writer.WriteLine($"{product.ProductID};" +
-                                    $"{EscapeCsv(product.ProductName)};" +
-                                    $"{EscapeCsv(product.Categories?.CategoryName ?? "")};" +
-                                    $"{product.Barcode};" +
-                                    $"{EscapeCsv(product.Manufacturer ?? "")};" +
-                                    $"{EscapeCsv(product.Model ?? "")};" +
-                                    $"{product.UnitPrice:F2};" +
-                                    $"{product.WarrantyMonths};" +
-                                    $"{stock}");
+                    var query = from r in ctx.ProductReturns
+                                join u in ctx.ProductUnits on r.UnitID equals u.UnitID
+                                join p in ctx.Products on r.ProductID equals p.ProductID
+                                join e in ctx.Employees on r.ProcessedByEmployeeID equals e.EmployeeID into empJoin
+                                from emp in empJoin.DefaultIfEmpty()
+                                where r.ReturnDate >= ReturnStartDate && r.ReturnDate <= ReturnEndDate
+                                select new ReturnReportItem
+                                {
+                                    ReturnID = r.ReturnID,
+                                    UnitID = r.UnitID,
+                                    ProductName = p.ProductName,
+                                    ReturnDate = r.ReturnDate,
+                                    ReturnReason = r.ReturnReason,
+                                    IsWarrantyCase = r.IsWarrantyCase,
+                                    RefundAmount = r.RefundAmount,
+                                    Status = u.Status,
+                                    ProcessedBy = emp != null ? $"{emp.LastName} {emp.FirstName}" : "Система"
+                                };
+                    var list = query.ToList();
+                    if (ReturnStatusFilter != "Все") list = list.Where(x => x.Status == ReturnStatusFilter).ToList();
+                    if (IsWarrantyFilter.HasValue) list = list.Where(x => x.IsWarrantyCase == IsWarrantyFilter.Value).ToList();
+                    ReturnReport = new ObservableCollection<ReturnReportItem>(list.OrderByDescending(x => x.ReturnDate));
+                    StatusMessage = $"Отчет по возвратам сгенерирован. Записей: {ReturnReport.Count}";
+                    StatusColor = "#27ae60";
                 }
+            }
+            catch (Exception ex)
+            {
+                StatusMessage = $"Ошибка генерации отчета: {ex.Message}";
+                StatusColor = "#e74c3c";
             }
         }
 
-        private void CreateSalesReportCsv(string filename)
+        private void ExportReturnReportPdf(object parameter)
         {
-            using (var writer = new StreamWriter(filename, false, System.Text.Encoding.UTF8))
+            var dialog = new SaveFileDialog { Filter = "PDF files (*.pdf)|*.pdf", FileName = $"Отчет_по_возвратам_{DateTime.Now:yyyyMMddHHmmss}.pdf" };
+            if (dialog.ShowDialog() != true) return;
+            CreateReturnReportPdf(dialog.FileName);
+            OpenFile(dialog.FileName);
+        }
+
+        private void CreateReturnReportPdf(string filename)
+        {
+            using (var document = new PdfDocument())
             {
-                writer.WriteLine("ID продажи;Дата;Сотрудник;Способ оплаты;Позиций;Сумма");
-                foreach (var item in SalesReport.OrderByDescending(s => s.SaleDate))
+                document.Info.Title = $"Отчет по возвратам за {ReturnStartDate:dd.MM.yyyy} - {ReturnEndDate:dd.MM.yyyy}";
+                var page = document.AddPage();
+                page.Width = XUnit.FromPoint(595);
+                page.Height = XUnit.FromPoint(842);
+                var gfx = XGraphics.FromPdfPage(page);
+                var fontTitle = new XFont("Arial", 14, XFontStyleEx.Bold);
+                var fontHeader = new XFont("Arial", 10, XFontStyleEx.Bold);
+                var fontNormal = new XFont("Arial", 9, XFontStyleEx.Regular);
+                double y = 30, left = 40;
+
+                gfx.DrawString("ОТЧЕТ ПО ВОЗВРАТАМ", fontTitle, XBrushes.DarkBlue, left, y);
+                y += 20;
+                gfx.DrawString($"Период: {ReturnStartDate:dd.MM.yyyy} - {ReturnEndDate:dd.MM.yyyy}", fontNormal, XBrushes.Black, left, y);
+                y += 20;
+                gfx.DrawString($"Дата формирования: {DateTime.Now:dd.MM.yyyy HH:mm}", fontNormal, XBrushes.Black, left, y);
+                y += 25;
+
+                gfx.DrawString("ID", fontHeader, XBrushes.Black, left, y);
+                gfx.DrawString("Товар", fontHeader, XBrushes.Black, left + 50, y);
+                gfx.DrawString("Дата", fontHeader, XBrushes.Black, left + 200, y);
+                gfx.DrawString("Причина", fontHeader, XBrushes.Black, left + 300, y);
+                gfx.DrawString("Сумма", fontHeader, XBrushes.Black, left + 450, y);
+                y += 15;
+
+                foreach (var item in ReturnReport.Take(50))
                 {
-                    writer.WriteLine($"{item.SaleId};{item.SaleDate:dd.MM.yyyy HH:mm};{EscapeCsv(item.EmployeeName)};{EscapeCsv(item.PaymentMethod)};{item.ItemsCount};{item.TotalAmount:F2}");
+                    if (y > page.Height.Point - 40)
+                    {
+                        page = document.AddPage();
+                        gfx.Dispose();
+                        gfx = XGraphics.FromPdfPage(page);
+                        y = 30;
+                    }
+                    gfx.DrawString(item.ReturnID.ToString(), fontNormal, XBrushes.Black, left, y);
+                    gfx.DrawString(TruncateString(item.ProductName, 25), fontNormal, XBrushes.Black, left + 50, y);
+                    gfx.DrawString(item.ReturnDate.ToString("dd.MM.yyyy"), fontNormal, XBrushes.Black, left + 200, y);
+                    gfx.DrawString(TruncateString(item.ReturnReason, 30), fontNormal, XBrushes.Black, left + 300, y);
+                    gfx.DrawString($"{item.RefundAmount:F2} ₽", fontNormal, XBrushes.Black, left + 450, y);
+                    y += 15;
                 }
+                gfx.Dispose();
+                document.Save(filename);
             }
         }
 
-        private void CreateStockReportCsv(string filename)
+        private void ExportReturnReportCsv(object parameter)
         {
-            using (var writer = new StreamWriter(filename, false, System.Text.Encoding.UTF8))
+            var dialog = new SaveFileDialog { Filter = "CSV files (*.csv)|*.csv", FileName = $"Отчет_по_возвратам_{DateTime.Now:yyyyMMddHHmmss}.csv" };
+            if (dialog.ShowDialog() != true) return;
+            using (var writer = new StreamWriter(dialog.FileName, false, Encoding.UTF8))
             {
-                writer.WriteLine("ID товара;Наименование;Категория;Остаток;Мин. остаток;Статус;Цена;Стоимость");
-                foreach (var item in StockReport.OrderBy(s => s.Status).ThenBy(s => s.ProductName))
+                writer.WriteLine("ID;Товар;Дата;Причина;Гарантия;Сумма;Статус;Обработал");
+                foreach (var r in ReturnReport)
+                    writer.WriteLine($"{r.ReturnID};{EscapeCsv(r.ProductName)};{r.ReturnDate:dd.MM.yyyy};{EscapeCsv(r.ReturnReason)};{(r.IsWarrantyCase ? "Да" : "Нет")};{r.RefundAmount:F2};{r.Status};{EscapeCsv(r.ProcessedBy)}");
+            }
+            OpenFile(dialog.FileName);
+        }
+
+        private void ExportReturnReportExcel(object parameter)
+        {
+            var dialog = new SaveFileDialog { Filter = "Excel files (*.xls)|*.xls", FileName = $"Отчет_по_возвратам_{DateTime.Now:yyyyMMddHHmmss}.xls" };
+            if (dialog.ShowDialog() != true) return;
+            using (var writer = new StreamWriter(dialog.FileName, false, Encoding.Unicode))
+            {
+                writer.WriteLine("ID\tТовар\tДата\tПричина\tГарантия\tСумма\tСтатус\tОбработал");
+                foreach (var r in ReturnReport)
+                    writer.WriteLine($"{r.ReturnID}\t{r.ProductName}\t{r.ReturnDate:dd.MM.yyyy}\t{r.ReturnReason}\t{(r.IsWarrantyCase ? "Да" : "Нет")}\t{r.RefundAmount:F2}\t{r.Status}\t{r.ProcessedBy}");
+            }
+            OpenFile(dialog.FileName);
+        }
+
+        // ========== ОТЧЁТ ПО НАКЛАДНЫМ ТОРГ-12 ==========
+        private void GenerateTorg12Report(object parameter)
+        {
+            try
+            {
+                using (var ctx = new KPMurtazinEntities())
                 {
-                    writer.WriteLine($"{item.ProductId};{EscapeCsv(item.ProductName)};{EscapeCsv(item.Category)};{item.CurrentStock};{item.MinStockLevel};{EscapeCsv(item.Status)};{item.UnitPrice:F2};{item.TotalValue:F2}");
+                    var docs = ctx.Torg12Documents
+                        .Include(d => d.Employees)
+                        .Include(d => d.Torg12Items)
+                        .Where(d => d.DocumentDate >= Torg12StartDate && d.DocumentDate <= Torg12EndDate)
+                        .ToList();
+                    if (!string.IsNullOrWhiteSpace(Torg12ReceiverFilter))
+                        docs = docs.Where(d => d.ReceiverName.Contains(Torg12ReceiverFilter)).ToList();
+                    if (Torg12StatusFilter != "Все")
+                        docs = docs.Where(d => d.Status == Torg12StatusFilter).ToList();
+
+                    var report = docs.Select(d => new Torg12ReportItem
+                    {
+                        Torg12ID = d.Torg12ID,
+                        DocumentNumber = d.DocumentNumber,
+                        DocumentDate = d.DocumentDate,
+                        ReceiverName = d.ReceiverName,
+                        CreatedBy = d.Employees != null ? $"{d.Employees.LastName} {d.Employees.FirstName}" : "Неизвестно",
+                        CreatedDate = d.CreatedDate,
+                        Status = d.Status,
+                        ItemsCount = d.Torg12Items.Count,
+                        TotalAmount = d.Torg12Items.Sum(i => i.Quantity * i.UnitPrice),
+                        Notes = d.Notes
+                    }).OrderByDescending(d => d.DocumentDate).ToList();
+
+                    Torg12Report = new ObservableCollection<Torg12ReportItem>(report);
+                    StatusMessage = $"Отчет по ТОРГ-12 сгенерирован. Документов: {Torg12Report.Count}";
+                    StatusColor = "#27ae60";
                 }
+            }
+            catch (Exception ex)
+            {
+                StatusMessage = $"Ошибка генерации отчета: {ex.Message}";
+                StatusColor = "#e74c3c";
             }
         }
 
-        private void CreateSalesReportExcel(string filename)
+        private void ExportTorg12ReportPdf(object parameter)
         {
-            using (var writer = new StreamWriter(filename, false, System.Text.Encoding.Unicode))
+            var dialog = new SaveFileDialog { Filter = "PDF files (*.pdf)|*.pdf", FileName = $"Отчет_ТОРГ12_{DateTime.Now:yyyyMMddHHmmss}.pdf" };
+            if (dialog.ShowDialog() != true) return;
+            CreateTorg12ReportPdf(dialog.FileName);
+            OpenFile(dialog.FileName);
+        }
+
+        private void CreateTorg12ReportPdf(string filename)
+        {
+            using (var document = new PdfDocument())
             {
-                writer.WriteLine("ID продажи\tДата\tСотрудник\tСпособ оплаты\tПозиций\tСумма");
-                foreach (var item in SalesReport.OrderByDescending(s => s.SaleDate))
+                document.Info.Title = $"Отчет по ТОРГ-12 за {Torg12StartDate:dd.MM.yyyy} - {Torg12EndDate:dd.MM.yyyy}";
+                var page = document.AddPage();
+                page.Width = XUnit.FromPoint(595);
+                page.Height = XUnit.FromPoint(842);
+                var gfx = XGraphics.FromPdfPage(page);
+                var fontTitle = new XFont("Arial", 14, XFontStyleEx.Bold);
+                var fontHeader = new XFont("Arial", 10, XFontStyleEx.Bold);
+                var fontNormal = new XFont("Arial", 9, XFontStyleEx.Regular);
+                double y = 30, left = 40;
+
+                gfx.DrawString("ОТЧЕТ ПО ТОРГ-12", fontTitle, XBrushes.DarkBlue, left, y);
+                y += 20;
+                gfx.DrawString($"Период: {Torg12StartDate:dd.MM.yyyy} - {Torg12EndDate:dd.MM.yyyy}", fontNormal, XBrushes.Black, left, y);
+                y += 20;
+                gfx.DrawString($"Дата формирования: {DateTime.Now:dd.MM.yyyy HH:mm}", fontNormal, XBrushes.Black, left, y);
+                y += 25;
+
+                gfx.DrawString("№ документа", fontHeader, XBrushes.Black, left, y);
+                gfx.DrawString("Дата", fontHeader, XBrushes.Black, left + 120, y);
+                gfx.DrawString("Получатель", fontHeader, XBrushes.Black, left + 200, y);
+                gfx.DrawString("Сумма", fontHeader, XBrushes.Black, left + 400, y);
+                gfx.DrawString("Статус", fontHeader, XBrushes.Black, left + 480, y);
+                y += 15;
+
+                foreach (var item in Torg12Report.Take(50))
                 {
-                    writer.WriteLine($"{item.SaleId}\t{item.SaleDate:dd.MM.yyyy HH:mm}\t{item.EmployeeName}\t{item.PaymentMethod}\t{item.ItemsCount}\t{item.TotalAmount:F2}");
+                    if (y > page.Height.Point - 40)
+                    {
+                        page = document.AddPage();
+                        gfx.Dispose();
+                        gfx = XGraphics.FromPdfPage(page);
+                        y = 30;
+                    }
+                    gfx.DrawString(item.DocumentNumber, fontNormal, XBrushes.Black, left, y);
+                    gfx.DrawString(item.DocumentDate.ToString("dd.MM.yyyy"), fontNormal, XBrushes.Black, left + 120, y);
+                    gfx.DrawString(TruncateString(item.ReceiverName, 30), fontNormal, XBrushes.Black, left + 200, y);
+                    gfx.DrawString($"{item.TotalAmount:F2} ₽", fontNormal, XBrushes.Black, left + 400, y);
+                    gfx.DrawString(item.Status, fontNormal, XBrushes.Black, left + 480, y);
+                    y += 15;
                 }
+                gfx.Dispose();
+                document.Save(filename);
             }
         }
 
-        private void CreateStockReportExcel(string filename)
+        private void ExportTorg12ReportCsv(object parameter)
         {
-            using (var writer = new StreamWriter(filename, false, System.Text.Encoding.Unicode))
+            var dialog = new SaveFileDialog { Filter = "CSV files (*.csv)|*.csv", FileName = $"Отчет_ТОРГ12_{DateTime.Now:yyyyMMddHHmmss}.csv" };
+            if (dialog.ShowDialog() != true) return;
+            using (var writer = new StreamWriter(dialog.FileName, false, Encoding.UTF8))
             {
-                writer.WriteLine("ID товара\tНаименование\tКатегория\tОстаток\tМин. остаток\tСтатус\tЦена\tСтоимость");
-                foreach (var item in StockReport.OrderBy(s => s.Status).ThenBy(s => s.ProductName))
+                writer.WriteLine("Номер;Дата;Получатель;Создал;Позиций;Сумма;Статус");
+                foreach (var t in Torg12Report)
+                    writer.WriteLine($"{EscapeCsv(t.DocumentNumber)};{t.DocumentDate:dd.MM.yyyy};{EscapeCsv(t.ReceiverName)};{EscapeCsv(t.CreatedBy)};{t.ItemsCount};{t.TotalAmount:F2};{t.Status}");
+            }
+            OpenFile(dialog.FileName);
+        }
+
+        private void ExportTorg12ReportExcel(object parameter)
+        {
+            var dialog = new SaveFileDialog { Filter = "Excel files (*.xls)|*.xls", FileName = $"Отчет_ТОРГ12_{DateTime.Now:yyyyMMddHHmmss}.xls" };
+            if (dialog.ShowDialog() != true) return;
+            using (var writer = new StreamWriter(dialog.FileName, false, Encoding.Unicode))
+            {
+                writer.WriteLine("Номер\tДата\tПолучатель\tСоздал\tПозиций\tСумма\tСтатус");
+                foreach (var t in Torg12Report)
+                    writer.WriteLine($"{t.DocumentNumber}\t{t.DocumentDate:dd.MM.yyyy}\t{t.ReceiverName}\t{t.CreatedBy}\t{t.ItemsCount}\t{t.TotalAmount:F2}\t{t.Status}");
+            }
+            OpenFile(dialog.FileName);
+        }
+
+        // ========== ИСТОРИЯ ТОВАРА ==========
+        private void LoadProductHistory()
+        {
+            if (SelectedProductForHistory == null) return;
+            try
+            {
+                using (var ctx = new KPMurtazinEntities())
                 {
-                    writer.WriteLine($"{item.ProductId}\t{item.ProductName}\t{item.Category}\t{item.CurrentStock}\t{item.MinStockLevel}\t{item.Status}\t{item.UnitPrice:F2}\t{item.TotalValue:F2}");
+                    int pid = SelectedProductForHistory.ProductID;
+                    var history = new ObservableCollection<ProductHistoryItem>();
+                    foreach (var m in ctx.ProductMovementHistory.Where(m => m.ProductID == pid).ToList())
+                        history.Add(new ProductHistoryItem
+                        {
+                            EventDate = m.MovementDate,
+                            EventType = "Движение",
+                            Description = $"{m.MovementType}: {m.Quantity} шт., {m.SourceDocumentType} #{m.SourceDocumentID}",
+                            Quantity = m.Quantity
+                        });
+                    foreach (var pc in ctx.ProductPriceHistory.Where(p => p.ProductID == pid).ToList())
+                        history.Add(new ProductHistoryItem
+                        {
+                            EventDate = pc.ChangedAt,
+                            EventType = "Изменение цены",
+                            Description = $"с {pc.OldPrice:F2} ₽ на {pc.NewPrice:F2} ₽",
+                            Price = pc.NewPrice,
+                            SourceDocument = pc.Source
+                        });
+                    var returns = from r in ctx.ProductReturns
+                                  where r.ProductID == pid
+                                  join u in ctx.ProductUnits on r.UnitID equals u.UnitID
+                                  select new { r, u };
+                    foreach (var ret in returns)
+                        history.Add(new ProductHistoryItem
+                        {
+                            EventDate = ret.r.ReturnDate,
+                            EventType = "Возврат",
+                            Description = $"Unit #{ret.u.UnitID}, причина: {ret.r.ReturnReason}, сумма {ret.r.RefundAmount:F2} ₽",
+                            Quantity = 1,
+                            Price = ret.r.RefundAmount
+                        });
+                    ProductHistory = new ObservableCollection<ProductHistoryItem>(history.OrderByDescending(h => h.EventDate));
+                    StatusMessage = $"История товара '{SelectedProductForHistory.ProductName}' загружена. Событий: {ProductHistory.Count}";
+                    StatusColor = "#27ae60";
                 }
+            }
+            catch (Exception ex)
+            {
+                StatusMessage = $"Ошибка загрузки истории: {ex.Message}";
+                StatusColor = "#e74c3c";
+            }
+        }
+        private void GenerateProductHistory(object parameter) => LoadProductHistory();
+
+        private void ExportProductHistoryPdf(object parameter)
+        {
+            if (SelectedProductForHistory == null) return;
+            var dialog = new SaveFileDialog { Filter = "PDF files (*.pdf)|*.pdf", FileName = $"История_{SelectedProductForHistory.ProductName}_{DateTime.Now:yyyyMMddHHmmss}.pdf" };
+            if (dialog.ShowDialog() != true) return;
+            CreateProductHistoryPdf(dialog.FileName);
+            OpenFile(dialog.FileName);
+        }
+
+        private void CreateProductHistoryPdf(string filename)
+        {
+            using (var document = new PdfDocument())
+            {
+                document.Info.Title = $"История товара {SelectedProductForHistory.ProductName}";
+                var page = document.AddPage();
+                page.Width = XUnit.FromPoint(595);
+                page.Height = XUnit.FromPoint(842);
+                var gfx = XGraphics.FromPdfPage(page);
+                var fontTitle = new XFont("Arial", 14, XFontStyleEx.Bold);
+                var fontHeader = new XFont("Arial", 10, XFontStyleEx.Bold);
+                var fontNormal = new XFont("Arial", 9, XFontStyleEx.Regular);
+                double y = 30, left = 40;
+
+                gfx.DrawString($"ИСТОРИЯ ТОВАРА: {SelectedProductForHistory.ProductName}", fontTitle, XBrushes.DarkBlue, left, y);
+                y += 25;
+                gfx.DrawString($"Дата формирования: {DateTime.Now:dd.MM.yyyy HH:mm}", fontNormal, XBrushes.Black, left, y);
+                y += 20;
+
+                gfx.DrawString("Дата", fontHeader, XBrushes.Black, left, y);
+                gfx.DrawString("Тип", fontHeader, XBrushes.Black, left + 120, y);
+                gfx.DrawString("Описание", fontHeader, XBrushes.Black, left + 200, y);
+                y += 15;
+
+                foreach (var h in ProductHistory.Take(100))
+                {
+                    if (y > page.Height.Point - 40)
+                    {
+                        page = document.AddPage();
+                        gfx.Dispose();
+                        gfx = XGraphics.FromPdfPage(page);
+                        y = 30;
+                    }
+                    gfx.DrawString(h.EventDate.ToString("dd.MM.yyyy HH:mm"), fontNormal, XBrushes.Black, left, y);
+                    gfx.DrawString(h.EventType, fontNormal, XBrushes.Black, left + 120, y);
+                    gfx.DrawString(TruncateString(h.Description, 60), fontNormal, XBrushes.Black, left + 200, y);
+                    y += 15;
+                }
+                gfx.Dispose();
+                document.Save(filename);
             }
         }
 
-        private void CreateProductCatalogExcel(string filename)
+        private void ExportProductHistoryCsv(object parameter)
         {
-            var products = _context.Products
-                .Include(p => p.Categories)
-                .ToList();
-
-            var stockBalances = _context.StockBalances
-                .GroupBy(sb => sb.ProductID)
-                .Select(g => new { ProductId = g.Key, TotalStock = g.Sum(sb => sb.Quantity) })
-                .ToDictionary(x => x.ProductId, x => x.TotalStock);
-
-            using (var writer = new StreamWriter(filename, false, System.Text.Encoding.Unicode))
+            if (SelectedProductForHistory == null) return;
+            var dialog = new SaveFileDialog { Filter = "CSV files (*.csv)|*.csv", FileName = $"История_{SelectedProductForHistory.ProductName}_{DateTime.Now:yyyyMMddHHmmss}.csv" };
+            if (dialog.ShowDialog() != true) return;
+            using (var writer = new StreamWriter(dialog.FileName, false, Encoding.UTF8))
             {
-                writer.WriteLine("ID\tНаименование\tКатегория\tШтрих-код\tПроизводитель\tМодель\tЦена\tГарантия (мес)\tОстаток");
-                foreach (var product in products.OrderBy(p => p.ProductName))
-                {
-                    int stock = stockBalances.ContainsKey(product.ProductID) ? stockBalances[product.ProductID] : 0;
-                    writer.WriteLine($"{product.ProductID}\t{product.ProductName}\t{product.Categories?.CategoryName ?? ""}\t{product.Barcode}\t{product.Manufacturer ?? ""}\t{product.Model ?? ""}\t{product.UnitPrice:F2}\t{product.WarrantyMonths}\t{stock}");
-                }
+                writer.WriteLine("Дата;Тип;Описание;Количество;Цена");
+                foreach (var h in ProductHistory)
+                    writer.WriteLine($"{h.EventDate:dd.MM.yyyy HH:mm};{h.EventType};{EscapeCsv(h.Description)};{h.Quantity};{(h.Price.HasValue ? h.Price.Value.ToString("F2") : "")}");
             }
+            OpenFile(dialog.FileName);
         }
 
-        private void CreateProductCatalogPdf(string filename)
+        private void ExportProductHistoryExcel(object parameter)
         {
-            var products = _context.Products
-                .Include(p => p.Categories)
-                .OrderBy(p => p.ProductName)
-                .ToList();
+            if (SelectedProductForHistory == null) return;
+            var dialog = new SaveFileDialog { Filter = "Excel files (*.xls)|*.xls", FileName = $"История_{SelectedProductForHistory.ProductName}_{DateTime.Now:yyyyMMddHHmmss}.xls" };
+            if (dialog.ShowDialog() != true) return;
+            using (var writer = new StreamWriter(dialog.FileName, false, Encoding.Unicode))
+            {
+                writer.WriteLine("Дата\tТип\tОписание\tКоличество\tЦена");
+                foreach (var h in ProductHistory)
+                    writer.WriteLine($"{h.EventDate:dd.MM.yyyy HH:mm}\t{h.EventType}\t{h.Description}\t{h.Quantity}\t{(h.Price.HasValue ? h.Price.Value.ToString("F2") : "")}");
+            }
+            OpenFile(dialog.FileName);
+        }
 
+        // ========== КАТАЛОГ ТОВАРОВ ==========
+        private void ExportProductCatalogPdf(object parameter)
+        {
+            var products = GetFilteredProductsForExport();
+            var dialog = new SaveFileDialog { Filter = "PDF files (*.pdf)|*.pdf", FileName = $"Каталог_товаров_{DateTime.Now:yyyyMMddHHmmss}.pdf" };
+            if (dialog.ShowDialog() != true) return;
+            CreateProductCatalogPdf(dialog.FileName, products);
+            OpenFile(dialog.FileName);
+        }
+
+        private void CreateProductCatalogPdf(string filename, IQueryable<Products> products)
+        {
+            var list = products.OrderBy(p => p.ProductName).ToList();
             using (var document = new PdfDocument())
             {
                 document.Info.Title = "Каталог товаров";
@@ -780,8 +959,7 @@ namespace DiplomMurtazin.ViewModel
                 var gfx = XGraphics.FromPdfPage(page);
                 var fontTitle = new XFont("Arial", 14, XFontStyleEx.Bold);
                 var font = new XFont("Arial", 9, XFontStyleEx.Regular);
-                double y = 30;
-                const double left = 30;
+                double y = 30, left = 30;
 
                 gfx.DrawString("КАТАЛОГ ТОВАРОВ", fontTitle, XBrushes.DarkBlue, left, y);
                 y += 25;
@@ -790,41 +968,83 @@ namespace DiplomMurtazin.ViewModel
                 gfx.DrawString("Цена", font, XBrushes.Black, left + 360, y);
                 y += 15;
 
-                foreach (var product in products)
+                var stockDict = _context.StockBalances.GroupBy(sb => sb.ProductID).ToDictionary(g => g.Key, g => g.Sum(sb => sb.Quantity));
+                foreach (var p in list)
                 {
                     if (y > page.Height.Point - 40)
                     {
                         page = document.AddPage();
-                        page.Width = XUnit.FromPoint(595);
-                        page.Height = XUnit.FromPoint(842);
                         gfx.Dispose();
                         gfx = XGraphics.FromPdfPage(page);
                         y = 30;
                     }
-
-                    gfx.DrawString(TruncateString(product.ProductName, 40), font, XBrushes.Black, left, y);
-                    gfx.DrawString(TruncateString(product.Categories?.CategoryName ?? "", 20), font, XBrushes.Black, left + 220, y);
-                    gfx.DrawString($"{product.UnitPrice:F2} ₽", font, XBrushes.Black, left + 360, y);
+                    int stock = stockDict.ContainsKey(p.ProductID) ? stockDict[p.ProductID] : 0;
+                    gfx.DrawString(TruncateString(p.ProductName, 40), font, XBrushes.Black, left, y);
+                    gfx.DrawString(TruncateString(p.Categories?.CategoryName ?? "", 20), font, XBrushes.Black, left + 220, y);
+                    gfx.DrawString($"{p.UnitPrice:F2} ₽ (ост.{stock})", font, XBrushes.Black, left + 360, y);
                     y += 14;
                 }
-
                 gfx.Dispose();
                 document.Save(filename);
             }
         }
 
-        private void OnReportSaved(string fileName, string reportName, string format)
+        private void ExportProductCatalogCsv(object parameter)
         {
-            StatusMessage = $"{reportName} сохранен: {Path.GetFileName(fileName)}";
-            StatusColor = "#27ae60";
-            AuditLogger.Log("REPORT_EXPORT", reportName, $"{reportName} экспортирован в формат {format}", metadata: $"File={Path.GetFileName(fileName)}");
-
-            var result = MessageBox.Show("Файл сохранен. Открыть его?",
-                "Успешно", MessageBoxButton.YesNo, MessageBoxImage.Question);
-            if (result == MessageBoxResult.Yes)
+            var products = GetFilteredProductsForExport();
+            var dialog = new SaveFileDialog { Filter = "CSV files (*.csv)|*.csv", FileName = $"Каталог_товаров_{DateTime.Now:yyyyMMddHHmmss}.csv" };
+            if (dialog.ShowDialog() != true) return;
+            var stockDict = _context.StockBalances.GroupBy(sb => sb.ProductID).ToDictionary(g => g.Key, g => g.Sum(sb => sb.Quantity));
+            using (var writer = new StreamWriter(dialog.FileName, false, Encoding.UTF8))
             {
-                Process.Start(fileName);
+                writer.WriteLine("ID;Наименование;Категория;Штрих-код;Производитель;Модель;Цена;Гарантия;Остаток");
+                foreach (var p in products.OrderBy(p => p.ProductName))
+                {
+                    int stock = stockDict.ContainsKey(p.ProductID) ? stockDict[p.ProductID] : 0;
+                    writer.WriteLine($"{p.ProductID};{EscapeCsv(p.ProductName)};{EscapeCsv(p.Categories?.CategoryName ?? "")};{p.Barcode};{EscapeCsv(p.Manufacturer ?? "")};{EscapeCsv(p.Model ?? "")};{p.UnitPrice:F2};{p.WarrantyMonths};{stock}");
+                }
             }
+            OpenFile(dialog.FileName);
+        }
+
+        private void ExportProductCatalogExcel(object parameter)
+        {
+            var products = GetFilteredProductsForExport();
+            var dialog = new SaveFileDialog { Filter = "Excel files (*.xls)|*.xls", FileName = $"Каталог_товаров_{DateTime.Now:yyyyMMddHHmmss}.xls" };
+            if (dialog.ShowDialog() != true) return;
+            var stockDict = _context.StockBalances.GroupBy(sb => sb.ProductID).ToDictionary(g => g.Key, g => g.Sum(sb => sb.Quantity));
+            using (var writer = new StreamWriter(dialog.FileName, false, Encoding.Unicode))
+            {
+                writer.WriteLine("ID\tНаименование\tКатегория\tШтрих-код\tПроизводитель\tМодель\tЦена\tГарантия\tОстаток");
+                foreach (var p in products.OrderBy(p => p.ProductName))
+                {
+                    int stock = stockDict.ContainsKey(p.ProductID) ? stockDict[p.ProductID] : 0;
+                    writer.WriteLine($"{p.ProductID}\t{p.ProductName}\t{p.Categories?.CategoryName ?? ""}\t{p.Barcode}\t{p.Manufacturer ?? ""}\t{p.Model ?? ""}\t{p.UnitPrice:F2}\t{p.WarrantyMonths}\t{stock}");
+                }
+            }
+            OpenFile(dialog.FileName);
+        }
+
+        private IQueryable<Products> GetFilteredProductsForExport()
+        {
+            using (var ctx = new KPMurtazinEntities())
+            {
+                var query = ctx.Products.Include(p => p.Categories).AsQueryable();
+                if (EnableProductFilter && SelectedProductItems != null && SelectedProductItems.Any(x => x.IsSelected))
+                {
+                    var selectedIds = SelectedProductItems.Where(x => x.IsSelected).Select(x => x.ProductID).ToList();
+                    if (selectedIds.Any())
+                        query = query.Where(p => selectedIds.Contains(p.ProductID));
+                }
+                return query;
+            }
+        }
+
+        // ========== ВСПОМОГАТЕЛЬНЫЕ МЕТОДЫ ==========
+        private void OpenFile(string path)
+        {
+            try { Process.Start(new ProcessStartInfo(path) { UseShellExecute = true }); }
+            catch { MessageBox.Show($"Файл сохранен: {path}", "Успешно", MessageBoxButton.OK, MessageBoxImage.Information); }
         }
 
         private string TruncateString(string s, int maxLength)
@@ -837,15 +1057,10 @@ namespace DiplomMurtazin.ViewModel
         {
             if (string.IsNullOrEmpty(s)) return "";
             if (s.Contains(";") || s.Contains("\"") || s.Contains("\n"))
-            {
                 return "\"" + s.Replace("\"", "\"\"") + "\"";
-            }
             return s;
         }
 
-        public void DisposeContext()
-        {
-            _context?.Dispose();
-        }
+        public void DisposeContext() => _context?.Dispose();
     }
 }
