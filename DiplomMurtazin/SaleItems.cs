@@ -18,6 +18,14 @@ using System;
 public partial class SaleItems
 {
 
+    public SaleItems()
+    {
+
+        this.ProductUnits = new HashSet<ProductUnits>();
+
+    }
+
+
     public int SaleItemID { get; set; }
 
     public int SaleID { get; set; }
@@ -37,6 +45,8 @@ public partial class SaleItems
     public virtual Products Products { get; set; }
 
     public virtual Sales Sales { get; set; }
+
+    public virtual ICollection<ProductUnits> ProductUnits { get; set; }
 
 }
 

@@ -173,6 +173,7 @@
     <Compile Include="Core\AuditLogger.cs" />
     <Compile Include="Core\BooleanToVisibilityConverter.cs" />
     <Compile Include="Core\ConnectionManager.cs" />
+    <Compile Include="Core\ReturnReasonItem.cs" />
     <Compile Include="Core\Torg12ExcelInteropService.cs" />
     <Compile Include="Core\DatabaseManager.cs" />
     <Compile Include="Core\DateToStringConverter.cs" />
@@ -189,6 +190,9 @@
     <Compile Include="Core\StatusBackgroundConverter.cs" />
     <Compile Include="Core\StockCountConverter.cs" />
     <Compile Include="Core\TextToVisibilityConverter.cs" />
+    <Compile Include="DefectiveProducts.cs">
+      <DependentUpon>Model1.tt</DependentUpon>
+    </Compile>
     <Compile Include="Employees.cs">
       <DependentUpon>Model1.tt</DependentUpon>
     </Compile>
@@ -223,7 +227,16 @@
     <Compile Include="ProductMovementHistory.cs">
       <DependentUpon>Model1.tt</DependentUpon>
     </Compile>
+    <Compile Include="ProductPriceHistory.cs">
+      <DependentUpon>Model1.tt</DependentUpon>
+    </Compile>
+    <Compile Include="ProductReturns.cs">
+      <DependentUpon>Model1.tt</DependentUpon>
+    </Compile>
     <Compile Include="Products.cs">
+      <DependentUpon>Model1.tt</DependentUpon>
+    </Compile>
+    <Compile Include="ProductUnits.cs">
       <DependentUpon>Model1.tt</DependentUpon>
     </Compile>
     <Compile Include="Salaries.cs">

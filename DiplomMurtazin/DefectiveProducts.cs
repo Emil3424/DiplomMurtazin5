@@ -15,38 +15,32 @@ namespace DiplomMurtazin
 using System;
     using System.Collections.Generic;
     
-public partial class Users
+public partial class DefectiveProducts
 {
 
-    public Users()
-    {
+    public int DefectiveID { get; set; }
 
-        this.Torg12Documents = new HashSet<Torg12Documents>();
+    public int ProductID { get; set; }
 
-    }
+    public Nullable<int> SaleID { get; set; }
 
+    public int Quantity { get; set; }
 
-    public int UserID { get; set; }
+    public string Reason { get; set; }
 
-    public int EmployeeID { get; set; }
+    public Nullable<System.DateTime> ReturnDate { get; set; }
 
-    public string Login { get; set; }
+    public Nullable<int> EmployeeID { get; set; }
 
-    public string Role { get; set; }
+    public string Status { get; set; }
 
-    public Nullable<System.DateTime> LastLogin { get; set; }
-
-    public Nullable<bool> IsActive { get; set; }
-
-    public string Password { get; set; }
-
-    public string PhotoPath { get; set; }
+    public string Notes { get; set; }
 
 
 
-    public virtual Employees Employees { get; set; }
+    public virtual Products Products { get; set; }
 
-    public virtual ICollection<Torg12Documents> Torg12Documents { get; set; }
+    public virtual Sales Sales { get; set; }
 
 }
 

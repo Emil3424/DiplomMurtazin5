@@ -33,11 +33,18 @@ namespace DiplomMurtazin
 
             this.StockBalances = new HashSet<StockBalances>();
 
-            this.AuditLog = new HashSet<AuditLog>();
-
             this.Torg12ImportMissingItems = new HashSet<Torg12ImportMissingItems>();
 
             this.Torg12Items = new HashSet<Torg12Items>();
+            this.AuditLog = new HashSet<AuditLog>();
+
+            this.DefectiveProducts = new HashSet<DefectiveProducts>();
+
+            this.ProductPriceHistory = new HashSet<ProductPriceHistory>();
+
+            this.ProductReturns = new HashSet<ProductReturns>();
+
+            this.ProductUnits = new HashSet<ProductUnits>();
 
         }
 
@@ -56,16 +63,16 @@ namespace DiplomMurtazin
 
         public decimal UnitPrice { get; set; }
 
-        public string PhotoPath { get; set; }
-        public byte[] PhotoData { get; set; }
         public Nullable<int> WarrantyMonths { get; set; }
 
         public Nullable<int> MinStockLevel { get; set; }
 
         public string Description { get; set; }
 
+        public Nullable<int> ReturnDays { get; set; }
 
-
+                public string PhotoPath { get; set; }
+        public byte[] PhotoData { get; set; }
         public virtual Categories Categories { get; set; }
 
         public virtual ICollection<InventoryDetails> InventoryDetails { get; set; }
@@ -78,11 +85,18 @@ namespace DiplomMurtazin
 
         public virtual ICollection<StockBalances> StockBalances { get; set; }
 
-        public virtual ICollection<AuditLog> AuditLog { get; set; }
-
         public virtual ICollection<Torg12ImportMissingItems> Torg12ImportMissingItems { get; set; }
 
         public virtual ICollection<Torg12Items> Torg12Items { get; set; }
+
+        public virtual ICollection<DefectiveProducts> DefectiveProducts { get; set; }
+
+        public virtual ICollection<ProductPriceHistory> ProductPriceHistory { get; set; }
+
+        public virtual ICollection<ProductReturns> ProductReturns { get; set; }
+
+        public virtual ICollection<AuditLog> AuditLog { get; set; }
+        public virtual ICollection<ProductUnits> ProductUnits { get; set; }
         private int _stockQuantity;
 
         public int StockQuantity

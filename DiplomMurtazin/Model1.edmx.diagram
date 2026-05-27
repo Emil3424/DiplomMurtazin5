@@ -50,11 +50,6 @@
         <AssociationConnector Association="KPMurtazinModel.FK__Sales__ShiftID__6E01572D" ManuallyRouted="false" />
         <AssociationConnector Association="KPMurtazinModel.FK__StockBala__ZoneI__71D1E811" ManuallyRouted="false" />
         <EntityTypeShape EntityType="KPMurtazinModel.UserViews" Width="1.5" PointX="3.375" PointY="0.75" />
-        <EntityTypeShape EntityType="KPMurtazinModel.AuditLog" Width="1.5" PointX="12.75" PointY="16.625" />
-        <AssociationConnector Association="KPMurtazinModel.FK_AuditLog_Employees" />
-        <AssociationConnector Association="KPMurtazinModel.FK_AuditLog_Products" />
-        <AssociationConnector Association="KPMurtazinModel.FK_AuditLog_Sales" />
-        <AssociationConnector Association="KPMurtazinModel.FK_AuditLog_Users" />
         <EntityTypeShape EntityType="KPMurtazinModel.Torg12Documents" Width="1.5" PointX="7.5" PointY="26" />
         <EntityTypeShape EntityType="KPMurtazinModel.Torg12ImportMissingItems" Width="1.5" PointX="15.5" PointY="17.875" />
         <EntityTypeShape EntityType="KPMurtazinModel.Torg12Items" Width="1.5" PointX="10.5" PointY="18.125" />
@@ -64,6 +59,20 @@
         <AssociationConnector Association="KPMurtazinModel.FK_Torg12Documents_Users" />
         <AssociationConnector Association="KPMurtazinModel.FK_Torg12ImportMissingItems_Torg12Documents" />
         <AssociationConnector Association="KPMurtazinModel.FK_Torg12Items_Torg12Documents" />
+        <EntityTypeShape EntityType="KPMurtazinModel.DefectiveProducts" Width="1.5" PointX="12.75" PointY="12.375" />
+        <EntityTypeShape EntityType="KPMurtazinModel.ProductPriceHistory" Width="1.5" PointX="10.5" PointY="6" />
+        <EntityTypeShape EntityType="KPMurtazinModel.ProductReturns" Width="1.5" PointX="20.25" PointY="12.125" />
+        <EntityTypeShape EntityType="KPMurtazinModel.ProductUnits" Width="1.5" PointX="18" PointY="14.875" />
+        <AssociationConnector Association="KPMurtazinModel.FK__Defective__Produ__7DEE718A" />
+        <AssociationConnector Association="KPMurtazinModel.FK__Defective__SaleI__7EE295C3" />
+        <AssociationConnector Association="KPMurtazinModel.FK_ProductPriceHistory_Products" />
+        <AssociationConnector Association="KPMurtazinModel.FK_ProductReturns_Products" />
+        <AssociationConnector Association="KPMurtazinModel.FK_ProductReturns_ProductUnits" />
+        <AssociationConnector Association="KPMurtazinModel.FK_ProductUnits_Products" />
+        <AssociationConnector Association="KPMurtazinModel.FK_ProductUnits_SaleItems" />
+        <AssociationConnector Association="KPMurtazinModel.FK_ProductUnits_Sales" />
+        <EntityTypeShape EntityType="KPMurtazinModel.AuditLog" Width="1.5" PointX="5.25" PointY="5.5" />
+        <AssociationConnector Association="KPMurtazinModel.FK_AuditLog_Employees" />
       </Diagram>
     </edmx:Diagrams>
   </edmx:Designer>

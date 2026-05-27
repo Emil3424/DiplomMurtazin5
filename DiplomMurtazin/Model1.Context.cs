@@ -16,13 +16,12 @@ namespace DiplomMurtazin
 using System;
 using System.Data.Entity;
 using System.Data.Entity.Infrastructure;
-using DiplomMurtazin.Core;
 
 
 public partial class KPMurtazinEntities : DbContext
 {
     public KPMurtazinEntities()
-        : base(ConnectionManager.BuildEntityConnectionString())
+        : base("name=KPMurtazinEntities")
     {
 
     }
@@ -71,13 +70,21 @@ public partial class KPMurtazinEntities : DbContext
 
     public DbSet<UserViews> UserViews { get; set; }
 
-    public DbSet<AuditLog> AuditLog { get; set; }
-
     public DbSet<Torg12Documents> Torg12Documents { get; set; }
 
     public DbSet<Torg12ImportMissingItems> Torg12ImportMissingItems { get; set; }
 
     public DbSet<Torg12Items> Torg12Items { get; set; }
+
+    public DbSet<DefectiveProducts> DefectiveProducts { get; set; }
+
+    public DbSet<ProductPriceHistory> ProductPriceHistory { get; set; }
+
+    public DbSet<ProductReturns> ProductReturns { get; set; }
+
+    public DbSet<ProductUnits> ProductUnits { get; set; }
+
+    public DbSet<AuditLog> AuditLog { get; set; }
 
 }
 

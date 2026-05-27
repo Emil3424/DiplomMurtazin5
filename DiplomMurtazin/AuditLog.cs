@@ -26,21 +26,11 @@ public partial class AuditLog
 
     public Nullable<int> EmployeeID { get; set; }
 
-    public Nullable<int> UserID { get; set; }
-
     public string ActionType { get; set; }
 
     public string EntityType { get; set; }
 
     public string EntityID { get; set; }
-
-    public Nullable<int> ProductID { get; set; }
-
-    public Nullable<int> SaleID { get; set; }
-
-    public string ReportName { get; set; }
-
-    public string ExportFormat { get; set; }
 
     public string Details { get; set; }
 
@@ -49,12 +39,6 @@ public partial class AuditLog
 
 
     public virtual Employees Employees { get; set; }
-
-    public virtual Products Products { get; set; }
-
-    public virtual Sales Sales { get; set; }
-
-    public virtual Users Users { get; set; }
 
 }
 

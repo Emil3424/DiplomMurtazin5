@@ -23,7 +23,9 @@ public partial class Sales
 
         this.SaleItems = new HashSet<SaleItems>();
 
-        this.AuditLog = new HashSet<AuditLog>();
+        this.DefectiveProducts = new HashSet<DefectiveProducts>();
+
+        this.ProductUnits = new HashSet<ProductUnits>();
 
     }
 
@@ -52,7 +54,9 @@ public partial class Sales
 
     public virtual Shifts Shifts { get; set; }
 
-    public virtual ICollection<AuditLog> AuditLog { get; set; }
+    public virtual ICollection<DefectiveProducts> DefectiveProducts { get; set; }
+
+    public virtual ICollection<ProductUnits> ProductUnits { get; set; }
 
 }
 

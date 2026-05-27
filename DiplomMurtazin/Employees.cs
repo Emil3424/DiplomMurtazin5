@@ -37,9 +37,9 @@ public partial class Employees
 
         this.Users = new HashSet<Users>();
 
-        this.AuditLog = new HashSet<AuditLog>();
-
         this.Torg12Documents = new HashSet<Torg12Documents>();
+
+        this.AuditLog = new HashSet<AuditLog>();
 
     }
 
@@ -92,9 +92,9 @@ public partial class Employees
 
     public virtual ICollection<Users> Users { get; set; }
 
-    public virtual ICollection<AuditLog> AuditLog { get; set; }
-
     public virtual ICollection<Torg12Documents> Torg12Documents { get; set; }
+
+    public virtual ICollection<AuditLog> AuditLog { get; set; }
 
 }
 
