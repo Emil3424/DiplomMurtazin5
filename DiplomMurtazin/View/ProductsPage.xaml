@@ -145,7 +145,7 @@
                            FontWeight="SemiBold"/>
 
                 <TextBlock Grid.Column="1" 
-                           Text="{Binding FilteredProductsCount, StringFormat=Показано: {0} из {1}}"
+                           Text="{Binding FilteredProductsCount}"
                            Foreground="White"
                            FontWeight="SemiBold"
                            Margin="20,0,0,0"/>

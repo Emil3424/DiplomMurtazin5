@@ -387,34 +387,6 @@
                 </StackPanel>
             </Border>
 
-            <!-- Каталог товаров с фильтром по товарам -->
-            <Border Background="White" Padding="20" CornerRadius="10" Margin="0,20,0,20" BorderBrush="#bdc3c7" BorderThickness="1">
-                <StackPanel>
-                    <TextBlock Text="Каталог товаров (расширенный)" FontSize="20" FontWeight="Bold" Margin="0,0,0,15"/>
-                    <CheckBox Content="Включить фильтр по товарам" IsChecked="{Binding EnableProductFilter}" Margin="0,0,0,10"/>
-                    <Grid IsEnabled="{Binding EnableProductFilter}">
-                        <Grid.ColumnDefinitions>
-                            <ColumnDefinition Width="Auto"/>
-                            <ColumnDefinition Width="200"/>
-                            <ColumnDefinition Width="Auto"/>
-                            <ColumnDefinition Width="*"/>
-                            <ColumnDefinition Width="Auto"/>
-                        </Grid.ColumnDefinitions>
-                        <TextBlock Text="Категория:" VerticalAlignment="Center" Margin="0,0,10,0"/>
-                        <ComboBox Grid.Column="1" ItemsSource="{Binding Categories}" SelectedItem="{Binding SelectedCategoryForFilter}" DisplayMemberPath="CategoryName" Height="30" Margin="0,0,10,0"/>
-                        <TextBlock Text="Товар:" Grid.Column="2" VerticalAlignment="Center" Margin="0,0,10,0"/>
-                        <ComboBox Grid.Column="3" ItemsSource="{Binding ProductNames}" SelectedItem="{Binding SelectedProductFilter}" IsEditable="True" Height="30"/>
-                        <Button Grid.Column="4" Content="Добавить" Command="{Binding AddProductCommand}" Margin="10,0,5,0" Width="80" Background="#27ae60" Foreground="White"/>
-                        <Button Grid.Column="4" Content="Очистить" Command="{Binding ClearSelectedProductsCommand}" Margin="95,0,0,0" Width="80" Background="#e74c3c" Foreground="White"/>
-                    </Grid>
-                    <TextBlock Text="{Binding SelectedProductsDisplay}" Margin="0,5,0,10" FontStyle="Italic" TextWrapping="Wrap"/>
-                    <StackPanel Orientation="Horizontal">
-                        <Button Content="PDF" Command="{Binding ExportProductCatalogPdfCommand}" Margin="0,0,10,0" Width="80" Background="#2c3e50" Foreground="White"/>
-                        <Button Content="CSV" Command="{Binding ExportProductCatalogCsvCommand}" Margin="0,0,10,0" Width="80" Background="#27ae60" Foreground="White"/>
-                        <Button Content="Excel" Command="{Binding ExportProductCatalogExcelCommand}" Width="80" Background="#8e44ad" Foreground="White"/>
-                    </StackPanel>
-                </StackPanel>
-            </Border>
             <!-- Статус бар -->
             <Border Grid.Row="3" 
                     Background="{Binding StatusColor}"

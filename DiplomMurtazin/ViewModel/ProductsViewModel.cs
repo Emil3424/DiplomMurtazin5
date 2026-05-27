@@ -449,39 +449,149 @@ namespace DiplomMurtazin.ViewModel
 
         private void DeleteProduct(object parameter)
         {
-            if (SelectedProduct == null) return;
-            var result = MessageBox.Show($"Удалить товар '{SelectedProduct.ProductName}'?", "Подтверждение",
-                MessageBoxButton.YesNo, MessageBoxImage.Question);
-            if (result == MessageBoxResult.Yes)
+            if (SelectedProduct == null)
+                return;
+
+            var result = MessageBox.Show(
+                $"Удалить товар '{SelectedProduct.ProductName}'?",
+                "Подтверждение",
+                MessageBoxButton.YesNo,
+                MessageBoxImage.Question);
+
+            if (result != MessageBoxResult.Yes)
+                return;
+
+            try
             {
-                try
+                using (var context = new KPMurtazinEntities())
                 {
-                    using (var context = new KPMurtazinEntities())
+                    int productId = SelectedProduct.ProductID;
+                    var saleItems = context.SaleItems
+    .Where(x => x.ProductID == productId)
+    .ToList();
+                    // SaleItemID связанных товаров
+                    var saleItemIds = context.SaleItems
+                        .Where(x => x.ProductID == productId)
+                        .Select(x => x.SaleItemID)
+                        .ToList();
+
+                    // ProductUnits
+                    var productUnits = context.ProductUnits
+                        .Where(x => saleItemIds.Contains((int)x.SaleItemID))
+                        .ToList();
+
+                    // ID юнитов
+                    var unitIds = productUnits
+                        .Select(x => x.UnitID)
+                        .ToList();
+
+                    // 1. ProductReturns
+                    var productReturns = context.ProductReturns
+                        .Where(x => unitIds.Contains(x.UnitID))
+                        .ToList();
+
+                    foreach (var item in productReturns)
                     {
-                        bool isUsed = context.SaleItems.Any(si => si.ProductID == SelectedProduct.ProductID) ||
-                                      context.InventoryDetails.Any(id => id.ProductID == SelectedProduct.ProductID) ||
-                                      context.InvoiceItems.Any(ii => ii.ProductID == SelectedProduct.ProductID) ||
-                                      context.StockBalances.Any(sb => sb.ProductID == SelectedProduct.ProductID);
-                        if (isUsed)
-                        {
-                            SetStatus("Нельзя удалить: товар используется в документах", true);
-                            return;
-                        }
-                        var productToDelete = context.Products.Find(SelectedProduct.ProductID);
-                        if (productToDelete != null)
-                        {
-                            context.Products.Remove(productToDelete);
-                            context.SaveChanges();
-                            AuditLogger.Log("DELETE", "Product", $"Удален товар '{productToDelete.ProductName}'", productToDelete.ProductID.ToString());
-                            RefreshData(null);
-                            SetStatus("Товар удален", false);
-                        }
+                        context.ProductReturns.Remove(item);
+                    }
+
+                    // 2. ProductUnits
+                    foreach (var unit in productUnits)
+                    {
+                        context.ProductUnits.Remove(unit);
+                    }
+
+
+                    foreach (var item in saleItems)
+                    {
+                        context.SaleItems.Remove(item);
+                    }
+                    var torg12Items = context.Torg12Items
+    .Where(t => t.ProductID == SelectedProduct.ProductID)
+    .ToList();
+
+                    foreach (var item in torg12Items)
+                        context.Torg12Items.Remove(item);
+
+                    var inventoryItems = context.InventoryDetails
+                        .Where(x => x.ProductID == productId)
+                        .ToList();
+
+                    foreach (var item in inventoryItems)
+                    {
+                        context.InventoryDetails.Remove(item);
+                    }
+
+                    var invoiceItems = context.InvoiceItems
+                        .Where(x => x.ProductID == productId)
+                        .ToList();
+
+                    foreach (var item in invoiceItems)
+                    {
+                        context.InvoiceItems.Remove(item);
+                    }
+
+                    var stockBalances = context.StockBalances
+                        .Where(x => x.ProductID == productId)
+                        .ToList();
+
+                    foreach (var item in stockBalances)
+                    {
+                        context.StockBalances.Remove(item);
+                    }
+
+                    var movementHistory = context.ProductMovementHistory
+                        .Where(x => x.ProductID == productId)
+                        .ToList();
+
+                    foreach (var item in movementHistory)
+                    {
+                        context.ProductMovementHistory.Remove(item);
+                    }
+                    //bool isUsed =
+                    //    context.SaleItems.Any(si => si.ProductID == productId) ||
+                    //    context.InventoryDetails.Any(id => id.ProductID == productId) ||
+                    //    context.InvoiceItems.Any(ii => ii.ProductID == productId);
+
+                    //if (isUsed)
+                    //{
+                    //    SetStatus("Нельзя удалить: товар используется в документах", true);
+                    //    return;
+                    //}
+
+
+
+                    var productToDelete = context.Products.Find(productId);
+
+                    if (productToDelete != null)
+                    {
+                        context.Products.Remove(productToDelete);
+                        context.SaveChanges();
+
+                        AuditLogger.Log(
+                            "DELETE",
+                            "Product",
+                            $"Удален товар '{productToDelete.ProductName}'",
+                            productToDelete.ProductID.ToString());
+
+                        RefreshData(null);
+                        SetStatus("Товар удален", false);
                     }
                 }
-                catch (Exception ex)
-                {
-                    SetStatus($"Ошибка удаления: {ex.Message}", true);
-                }
+            }
+            catch (Exception ex)
+            {
+                var error = ex.Message;
+
+                if (ex.InnerException != null)
+                    error += "\n\n" + ex.InnerException.Message;
+
+                if (ex.InnerException?.InnerException != null)
+                    error += "\n\n" + ex.InnerException.InnerException.Message;
+
+                MessageBox.Show(error);
+
+                SetStatus($"Ошибка удаления: {ex.Message}", true);
             }
         }
 
