@@ -124,7 +124,6 @@
                 <StackPanel>
                     <StackPanel Orientation="Horizontal" Margin="0 0 0 10">
                         <TextBlock Text="Низкие остатки и прогноз" FontSize="22" FontWeight="Bold" VerticalAlignment="Center"/>
-                        <Button Content="Сформировать закупку" Command="{Binding CreatePurchaseOrderCommand}" Margin="20,0,0,0" Width="180" Height="35" Background="#27ae60" Foreground="White"/>
                     </StackPanel>
                     <DataGrid ItemsSource="{Binding LowStockItems}" AutoGenerateColumns="False" Height="300">
                         <DataGrid.Columns>
