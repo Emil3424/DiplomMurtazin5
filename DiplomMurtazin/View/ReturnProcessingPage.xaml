@@ -1,0 +1,239 @@
+<Page x:Class="DiplomMurtazin.View.ReturnProcessingPage"
+      xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+      xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+      Title="Оформление возврата"
+      Loaded="Page_Loaded"
+      Background="#ecf0f1">
+
+    <Grid Margin="20">
+
+        <Grid.RowDefinitions>
+            <RowDefinition Height="Auto"/>
+            <RowDefinition Height="*"/>
+            <RowDefinition Height="Auto"/>
+        </Grid.RowDefinitions>
+
+        <!-- HEADER -->
+
+        <StackPanel Orientation="Horizontal"
+                    Margin="0,0,0,15">
+
+            <TextBlock Text="Оформление возврата"
+                       FontSize="28"
+                       FontWeight="Bold"
+                       Foreground="#2c3e50"
+                       Margin="0,0,20,0"/>
+
+            <TextBox Width="260"
+                     Height="36"
+                     Margin="0,0,10,0"
+                     Text="{Binding SearchText, UpdateSourceTrigger=PropertyChanged}"
+                     FontSize="15"
+                     VerticalContentAlignment="Center"/>
+
+            <Button Content="Найти"
+                    Width="100"
+                    Height="36"
+                    Command="{Binding RefreshCommand}"
+                    Background="#3498db"
+                    Foreground="White"
+                    BorderThickness="0"
+                    Cursor="Hand"/>
+
+        </StackPanel>
+
+        <!-- MAIN -->
+
+        <Grid Grid.Row="1">
+
+            <Grid.ColumnDefinitions>
+                <ColumnDefinition Width="*"/>
+                <ColumnDefinition Width="380"/>
+            </Grid.ColumnDefinitions>
+
+            <!-- PRODUCTS -->
+
+            <Border Background="White"
+                    CornerRadius="10"
+                    Padding="10">
+
+                <DataGrid ItemsSource="{Binding SoldUnits}"
+                          SelectedItem="{Binding SelectedUnit}"
+                          AutoGenerateColumns="False"
+                          IsReadOnly="True"
+                          Background="White"
+                          BorderThickness="0">
+
+                    <DataGrid.Columns>
+
+                        <DataGridTextColumn Header="UnitID"
+                                            Binding="{Binding UnitID}"
+                                            Width="70"/>
+
+                        <DataGridTextColumn Header="Товар"
+                                            Binding="{Binding ProductName}"
+                                            Width="*"/>
+
+                        <DataGridTextColumn Header="Продан"
+                                            Binding="{Binding SoldDate, StringFormat=dd.MM.yyyy}"
+                                            Width="110"/>
+
+                        <DataGridTextColumn Header="Возврат до"
+                                            Binding="{Binding ReturnEndDate, StringFormat=dd.MM.yyyy}"
+                                            Width="110"/>
+
+                        <DataGridTextColumn Header="Гарантия"
+                                            Binding="{Binding WarrantyEndDate, StringFormat=dd.MM.yyyy}"
+                                            Width="110"/>
+
+                        <DataGridTextColumn Header="Цена"
+                                            Binding="{Binding UnitPrice, StringFormat={}{0:F2} ₽}"
+                                            Width="110"/>
+
+                    </DataGrid.Columns>
+
+                </DataGrid>
+
+            </Border>
+
+            <!-- RIGHT PANEL -->
+
+            <Border Grid.Column="1"
+                    Margin="15,0,0,0"
+                    Background="White"
+                    CornerRadius="10"
+                    Padding="15">
+
+                <ScrollViewer VerticalScrollBarVisibility="Auto">
+
+                    <StackPanel>
+
+                        <!-- SELECTED PRODUCT -->
+
+                        <Border Background="#f8f9fa"
+                                CornerRadius="8"
+                                Padding="10"
+                                Margin="0,0,0,15">
+
+                            <StackPanel>
+
+                                <TextBlock Text="Выбранный товар"
+                                           FontWeight="Bold"
+                                           FontSize="16"/>
+
+                                <TextBlock Text="{Binding SelectedUnit.ProductName}"
+                                           Margin="0,5,0,0"
+                                           FontSize="15"/>
+
+                                <TextBlock Text="{Binding SelectedUnit.UnitPrice,
+                                                  StringFormat=Цена: {0:F2} ₽}"
+                                           Foreground="#27ae60"/>
+
+                            </StackPanel>
+
+                        </Border>
+
+                        <TextBlock Text="Причина возврата"
+           FontWeight="Bold"
+           FontSize="15"
+           Margin="0,0,0,10"/>
+
+                        <WrapPanel Margin="0,0,0,15">
+
+                            <CheckBox Content="Сломан товар"
+              IsChecked="{Binding IsBrokenSelected}"
+              Margin="0,0,15,10"
+              FontSize="14"/>
+
+                            <CheckBox Content="Поврежден"
+              IsChecked="{Binding IsDamagedSelected}"
+              Margin="0,0,15,10"
+              FontSize="14"/>
+
+                            <CheckBox Content="Заводской брак"
+              IsChecked="{Binding IsFactoryDefectSelected}"
+              Margin="0,0,15,10"
+              FontSize="14"/>
+
+                            <CheckBox Content="Выдан не тот товар"
+              IsChecked="{Binding IsWrongItemSelected}"
+              Margin="0,0,15,10"
+              FontSize="14"/>
+
+                            <CheckBox Content="Клиент передумал"
+              IsChecked="{Binding IsClientChangedMindSelected}"
+              Margin="0,0,15,10"
+              FontSize="14"/>
+                            <Border Background="{Binding StatusColor}"
+        CornerRadius="6"
+        Padding="10"
+        Margin="0,10,0,10">
+
+                                <TextBlock Text="{Binding StatusMessage}"
+               Foreground="White"
+               FontWeight="Bold"
+               FontSize="14"/>
+
+                            </Border>
+                        </WrapPanel>
+
+                        <!-- COMMENT -->
+
+                        <TextBlock Text="Комментарий менеджера"
+                                   FontWeight="Bold"
+                                   Margin="0,0,0,5"/>
+
+                        <TextBox Height="120"
+                                 AcceptsReturn="True"
+                                 TextWrapping="Wrap"
+                                 Text="{Binding ManagerComment, UpdateSourceTrigger=PropertyChanged}"/>
+
+                        <!-- INFO -->
+
+                        <Border Background="#fff3cd"
+                                CornerRadius="8"
+                                Padding="10"
+                                Margin="0,15,0,15">
+
+                            <TextBlock Text="{Binding ReturnDestinationText}"
+                                       TextWrapping="Wrap"
+                                       FontWeight="SemiBold"/>
+
+                        </Border>
+
+                        <!-- BUTTON -->
+
+                        <Button Content="Оформить возврат"
+                                Height="42"
+                                Command="{Binding ProcessReturnCommand}"
+                                Background="#e67e22"
+                                Foreground="White"
+                                FontSize="15"
+                                FontWeight="Bold"
+                                BorderThickness="0"
+                                Cursor="Hand"/>
+
+                    </StackPanel>
+
+                </ScrollViewer>
+
+            </Border>
+
+        </Grid>
+
+        <!-- STATUS -->
+
+        <Border Grid.Row="2"
+                Background="{Binding StatusColor}"
+                CornerRadius="5"
+                Padding="10"
+                Margin="0,15,0,0">
+
+            <TextBlock Text="{Binding StatusMessage}"
+                       Foreground="White"/>
+
+        </Border>
+
+    </Grid>
+
+</Page>
