@@ -20,7 +20,22 @@ namespace DiplomMurtazin.ViewModel
         private string _statusColor = "#3498db";
 
         public ObservableCollection<SoldUnitItem> SoldUnits { get; } = new ObservableCollection<SoldUnitItem>();
+        private bool _isDefective;
 
+        public bool IsDefective
+        {
+            get => _isDefective;
+            set
+            {
+                Set(ref _isDefective, value);
+                OnPropertyChanged(nameof(ReturnDestinationText));
+            }
+        }
+
+        public string ReturnDestinationText =>
+            IsDefective
+                ? "⚠️ Товар будет отправлен в дефектные товары"
+                : "✅ Товар будет возвращен на склад";
         public SoldUnitItem SelectedUnit
         {
             get => _selectedUnit;
@@ -95,25 +110,62 @@ ORDER BY u.SoldDate DESC";
 
         private void ProcessReturn()
         {
-            if (SelectedUnit == null) return;
+            if (SelectedUnit == null)
+                return;
+
             try
             {
                 var now = DateTime.Now;
-                var isWarranty = SelectedUnit.WarrantyEndDate.HasValue && now.Date <= SelectedUnit.WarrantyEndDate.Value.Date;
-                var refund = SelectedUnit.ReturnEndDate.HasValue && now.Date <= SelectedUnit.ReturnEndDate.Value.Date
-                    ? SelectedUnit.UnitPrice
-                    : 0m;
-                var reason = $"{ReturnReason ?? ""} {ManagerComment ?? ""}".Trim();
+
+                var isWarranty =
+                    SelectedUnit.WarrantyEndDate.HasValue &&
+                    now.Date <= SelectedUnit.WarrantyEndDate.Value.Date;
+
+                var refund =
+                    SelectedUnit.ReturnEndDate.HasValue &&
+                    now.Date <= SelectedUnit.ReturnEndDate.Value.Date
+                        ? SelectedUnit.UnitPrice
+                        : 0m;
+
+                var reason =
+                    $"{ReturnReason ?? ""} {ManagerComment ?? ""}".Trim();
 
                 int returnId;
+
                 using (var context = new KPMurtazinEntities())
                 {
+                    // =====================================
+                    // СОЗДАНИЕ ВОЗВРАТА
+                    // =====================================
+
                     returnId = context.Database.SqlQuery<int>(@"
 INSERT INTO dbo.ProductReturns
-(UnitID, ProductID, SaleID, SaleItemID, ReturnDate, ReturnReason, IsWarrantyCase, RefundAmount, ProcessedByEmployeeID)
+(
+UnitID,
+ProductID,
+SaleID,
+SaleItemID,
+ReturnDate,
+ReturnReason,
+IsWarrantyCase,
+RefundAmount,
+ProcessedByEmployeeID
+)
 VALUES
-(@UnitID, @ProductID, @SaleID, @SaleItemID, @ReturnDate, @ReturnReason, @IsWarrantyCase, @RefundAmount, @ProcessedBy);
+(
+@UnitID,
+@ProductID,
+@SaleID,
+@SaleItemID,
+@ReturnDate,
+@ReturnReason,
+@IsWarrantyCase,
+@RefundAmount,
+@ProcessedBy
+);
+
 SELECT CAST(SCOPE_IDENTITY() AS INT);",
+
                         new SqlParameter("@UnitID", SelectedUnit.UnitID),
                         new SqlParameter("@ProductID", SelectedUnit.ProductID),
                         new SqlParameter("@SaleID", SelectedUnit.SaleID),
@@ -122,62 +174,146 @@ SELECT CAST(SCOPE_IDENTITY() AS INT);",
                         new SqlParameter("@ReturnReason", (object)reason ?? DBNull.Value),
                         new SqlParameter("@IsWarrantyCase", isWarranty),
                         new SqlParameter("@RefundAmount", refund),
-                        new SqlParameter("@ProcessedBy", (object)App.CurrentUser?.EmployeeID ?? DBNull.Value)).First();
+                        new SqlParameter("@ProcessedBy",
+                            (object)App.CurrentUser?.EmployeeID ?? DBNull.Value))
+                        .First();
 
-                    context.Database.ExecuteSqlCommand(
-                        "UPDATE dbo.ProductUnits SET Status = N'RETURNED', LastUpdated = @Now, ReturnDocumentID = @ReturnID WHERE UnitID = @UnitID",
-                        new SqlParameter("@Now", now),
-                        new SqlParameter("@ReturnID", returnId),
-                        new SqlParameter("@UnitID", SelectedUnit.UnitID));
+                    // =====================================
+                    // ЕСЛИ БРАК
+                    // =====================================
 
-                    context.Database.ExecuteSqlCommand(
-                        "UPDATE dbo.StockBalances SET Quantity = Quantity + 1, LastUpdated = @Now WHERE ProductID = @ProductID",
-                        new SqlParameter("@Now", now),
-                        new SqlParameter("@ProductID", SelectedUnit.ProductID));
-
-                    context.ProductMovementHistory.Add(new ProductMovementHistory
+                    if (IsDefective)
                     {
-                        ProductID = SelectedUnit.ProductID,
-                        MovementType = "RETURN",
-                        Quantity = 1,
-                        SourceDocumentID = returnId,
-                        SourceDocumentType = "RETURN",
-                        MovementDate = now,
-                        EmployeeID = App.CurrentUser?.EmployeeID
-                    });
+                        context.Database.ExecuteSqlCommand(@"
+INSERT INTO dbo.DefectiveProducts
+(
+UnitID,
+ProductID,
+SaleID,
+ReturnID,
+Quantity,
+Reason,
+Status,
+Notes,
+CreatedDate,
+EmployeeID
+)
+VALUES
+(
+@UnitID,
+@ProductID,
+@SaleID,
+@ReturnID,
+1,
+@Reason,
+@Status,
+@Notes,
+@CreatedDate,
+@EmployeeID
+)",
+
+                            new SqlParameter("@UnitID", SelectedUnit.UnitID),
+
+                            new SqlParameter("@ProductID", SelectedUnit.ProductID),
+
+                            new SqlParameter("@SaleID", SelectedUnit.SaleID),
+
+                            new SqlParameter("@ReturnID", returnId),
+
+                            new SqlParameter("@Reason", reason),
+
+                            new SqlParameter("@Status", "На диагностике"),
+
+                            new SqlParameter("@Notes",
+                                (object)ManagerComment ?? DBNull.Value),
+
+                            new SqlParameter("@CreatedDate", now),
+
+                            new SqlParameter("@EmployeeID",
+                                (object)App.CurrentUser?.EmployeeID ?? DBNull.Value));
+
+                        // Меняем статус Unit
+
+                        context.Database.ExecuteSqlCommand(@"
+UPDATE dbo.ProductUnits
+SET Status = N'DEFECTIVE',
+    LastUpdated = @Now,
+    ReturnDocumentID = @ReturnID
+WHERE UnitID = @UnitID",
+
+                            new SqlParameter("@Now", now),
+                            new SqlParameter("@ReturnID", returnId),
+                            new SqlParameter("@UnitID", SelectedUnit.UnitID));
+
+                        // История
+
+                        context.ProductMovementHistory.Add(
+                            new ProductMovementHistory
+                            {
+                                ProductID = SelectedUnit.ProductID,
+                                MovementType = "DEFECTIVE_RETURN",
+                                Quantity = 1,
+                                SourceDocumentID = returnId,
+                                SourceDocumentType = "RETURN",
+                                MovementDate = now,
+                                EmployeeID = App.CurrentUser?.EmployeeID
+                            });
+                    }
+                    else
+                    {
+                        // =====================================
+                        // ОБЫЧНЫЙ ВОЗВРАТ
+                        // =====================================
+
+                        context.Database.ExecuteSqlCommand(@"
+UPDATE dbo.ProductUnits
+SET Status = N'RETURNED',
+    LastUpdated = @Now,
+    ReturnDocumentID = @ReturnID
+WHERE UnitID = @UnitID",
+
+                            new SqlParameter("@Now", now),
+                            new SqlParameter("@ReturnID", returnId),
+                            new SqlParameter("@UnitID", SelectedUnit.UnitID));
+
+                        // Возврат на склад
+
+                        context.Database.ExecuteSqlCommand(@"
+UPDATE dbo.StockBalances
+SET Quantity = Quantity + 1,
+    LastUpdated = @Now
+WHERE ProductID = @ProductID",
+
+                            new SqlParameter("@Now", now),
+                            new SqlParameter("@ProductID", SelectedUnit.ProductID));
+
+                        // История
+
+                        context.ProductMovementHistory.Add(
+                            new ProductMovementHistory
+                            {
+                                ProductID = SelectedUnit.ProductID,
+                                MovementType = "RETURN",
+                                Quantity = 1,
+                                SourceDocumentID = returnId,
+                                SourceDocumentType = "RETURN",
+                                MovementDate = now,
+                                EmployeeID = App.CurrentUser?.EmployeeID
+                            });
+                    }
+
                     context.SaveChanges();
                 }
 
-                var receipt = new ReceiptModel
-                {
-                    SaleNumber = returnId,
-                    ShiftNumber = 1,
-                    Cashier = App.CurrentUser?.Login ?? "SYSTEM",
-                    DateTime = now,
-                    TotalAmount = refund,
-                    AmountWithoutVat = refund,
-                    CashPayment = refund,
-                    DocumentNumber = returnId,
-                    FdNumber = new Random().Next(100000, 999999),
-                    Fp = new Random().Next(100000000, 999999999).ToString(),
-                    CompanyName = "Возврат товара"
-                };
-                receipt.Items.Add(new ReceiptItem
-                {
-                    Name = $"Возврат Unit #{SelectedUnit.UnitID} / {SelectedUnit.ProductName}",
-                    Price = refund,
-                    Quantity = 1
-                });
-                var wnd = new ReceiptWindow(receipt)
-                {
-                    Owner = Application.Current.Windows.OfType<Window>().FirstOrDefault(w => w is MainWindow)
-                };
-                wnd.ShowDialog();
+                SetStatus(
+                    IsDefective
+                        ? "Товар отправлен в дефектные товары"
+                        : $"Возврат оформлен. Сумма: {refund:F2} ₽",
+                    false);
 
-                AuditLogger.Log("RETURN", "ProductUnit", $"Оформлен возврат #{returnId}: UnitID={SelectedUnit.UnitID}", returnId.ToString(), reason);
-                SetStatus($"Возврат оформлен. Сумма: {refund:F2} ₽", false);
-                ReturnReason = string.Empty;
-                ManagerComment = string.Empty;
+                ReturnReason = "";
+                ManagerComment = "";
+
                 LoadSoldUnits();
             }
             catch (Exception ex)

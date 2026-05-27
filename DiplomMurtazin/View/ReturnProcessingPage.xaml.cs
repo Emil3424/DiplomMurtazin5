@@ -19,5 +19,26 @@ namespace DiplomMurtazin.View
         {
             _viewModel.LoadSoldUnits();
         }
+        private void Reason_Checked(object sender, RoutedEventArgs e)
+        {
+            if (DataContext is ReturnProcessingViewModel vm)
+            {
+                vm.IsDefective = false;
+
+                vm.ReturnReason =
+                    ((RadioButton)sender).Content.ToString();
+            }
+        }
+
+        private void Defective_Checked(object sender, RoutedEventArgs e)
+        {
+            if (DataContext is ReturnProcessingViewModel vm)
+            {
+                vm.IsDefective = true;
+
+                vm.ReturnReason =
+                    ((RadioButton)sender).Content.ToString();
+            }
+        }
     }
 }

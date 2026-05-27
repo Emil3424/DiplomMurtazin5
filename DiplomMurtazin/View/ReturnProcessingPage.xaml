@@ -4,49 +4,258 @@
       Title="Оформление возврата"
       Loaded="Page_Loaded"
       Background="#ecf0f1">
+
     <Grid Margin="20">
+
         <Grid.RowDefinitions>
             <RowDefinition Height="Auto"/>
             <RowDefinition Height="*"/>
             <RowDefinition Height="Auto"/>
         </Grid.RowDefinitions>
 
-        <StackPanel Orientation="Horizontal" Margin="0,0,0,10">
-            <TextBlock Text="Оформление возврата" FontSize="26" FontWeight="Bold" Foreground="#2c3e50" Margin="0,0,20,0"/>
-            <TextBox Width="250" Height="34" Margin="0,0,8,0" Text="{Binding SearchText, UpdateSourceTrigger=PropertyChanged}"
-                      FontSize="16" VerticalContentAlignment="Center"/>
-            <Button Content="Найти" Width="90" Height="34" Command="{Binding RefreshCommand}" Background="#3498db" Foreground="White"/>
+        <!-- HEADER -->
+
+        <StackPanel Orientation="Horizontal"
+                    Margin="0,0,0,15">
+
+            <TextBlock Text="Оформление возврата"
+                       FontSize="28"
+                       FontWeight="Bold"
+                       Foreground="#2c3e50"
+                       Margin="0,0,20,0"/>
+
+            <TextBox Width="260"
+                     Height="36"
+                     Margin="0,0,10,0"
+                     Text="{Binding SearchText, UpdateSourceTrigger=PropertyChanged}"
+                     FontSize="15"
+                     VerticalContentAlignment="Center"/>
+
+            <Button Content="Найти"
+                    Width="100"
+                    Height="36"
+                    Command="{Binding RefreshCommand}"
+                    Background="#3498db"
+                    Foreground="White"
+                    BorderThickness="0"
+                    Cursor="Hand"/>
+
         </StackPanel>
 
+        <!-- MAIN -->
+
         <Grid Grid.Row="1">
+
             <Grid.ColumnDefinitions>
                 <ColumnDefinition Width="*"/>
-                <ColumnDefinition Width="350"/>
+                <ColumnDefinition Width="380"/>
             </Grid.ColumnDefinitions>
-            <DataGrid ItemsSource="{Binding SoldUnits}" SelectedItem="{Binding SelectedUnit}" AutoGenerateColumns="False" IsReadOnly="True" Background="White">
-                <DataGrid.Columns>
-                    <DataGridTextColumn Header="UnitID" Binding="{Binding UnitID}" Width="70"/>
-                    <DataGridTextColumn Header="Товар" Binding="{Binding ProductName}" Width="*"/>
-                    <DataGridTextColumn Header="Продан" Binding="{Binding SoldDate, StringFormat=dd.MM.yyyy}" Width="100"/>
-                    <DataGridTextColumn Header="Возврат до" Binding="{Binding ReturnEndDate, StringFormat=dd.MM.yyyy}" Width="100"/>
-                    <DataGridTextColumn Header="Гарантия до" Binding="{Binding WarrantyEndDate, StringFormat=dd.MM.yyyy}" Width="100"/>
-                    <DataGridTextColumn Header="Цена" Binding="{Binding UnitPrice, StringFormat={}{0:F2} ₽}" Width="100"/>
-                </DataGrid.Columns>
-            </DataGrid>
 
-            <Border Grid.Column="1" Margin="10,0,0,0" Background="White" BorderBrush="#bdc3c7" BorderThickness="1" CornerRadius="6" Padding="12">
-                <StackPanel>
-                    <TextBlock Text="Причина возврата" FontWeight="SemiBold"/>
-                    <TextBox Height="80" TextWrapping="Wrap" AcceptsReturn="True" Text="{Binding ReturnReason, UpdateSourceTrigger=PropertyChanged}" Margin="0,5,0,10"/>
-                    <TextBlock Text="Комментарий менеджера" FontWeight="SemiBold"/>
-                    <TextBox Height="80" TextWrapping="Wrap" AcceptsReturn="True" Text="{Binding ManagerComment, UpdateSourceTrigger=PropertyChanged}" Margin="0,5,0,10"/>
-                    <Button Content="Оформить возврат и выдать чек" Height="36" Command="{Binding ProcessReturnCommand}" Background="#e67e22" Foreground="White"/>
-                </StackPanel>
+            <!-- PRODUCTS -->
+
+            <Border Background="White"
+                    CornerRadius="10"
+                    Padding="10">
+
+                <DataGrid ItemsSource="{Binding SoldUnits}"
+                          SelectedItem="{Binding SelectedUnit}"
+                          AutoGenerateColumns="False"
+                          IsReadOnly="True"
+                          Background="White"
+                          BorderThickness="0">
+
+                    <DataGrid.Columns>
+
+                        <DataGridTextColumn Header="UnitID"
+                                            Binding="{Binding UnitID}"
+                                            Width="70"/>
+
+                        <DataGridTextColumn Header="Товар"
+                                            Binding="{Binding ProductName}"
+                                            Width="*"/>
+
+                        <DataGridTextColumn Header="Продан"
+                                            Binding="{Binding SoldDate, StringFormat=dd.MM.yyyy}"
+                                            Width="110"/>
+
+                        <DataGridTextColumn Header="Возврат до"
+                                            Binding="{Binding ReturnEndDate, StringFormat=dd.MM.yyyy}"
+                                            Width="110"/>
+
+                        <DataGridTextColumn Header="Гарантия"
+                                            Binding="{Binding WarrantyEndDate, StringFormat=dd.MM.yyyy}"
+                                            Width="110"/>
+
+                        <DataGridTextColumn Header="Цена"
+                                            Binding="{Binding UnitPrice, StringFormat={}{0:F2} ₽}"
+                                            Width="110"/>
+
+                    </DataGrid.Columns>
+
+                </DataGrid>
+
             </Border>
+
+            <!-- RIGHT PANEL -->
+
+            <Border Grid.Column="1"
+                    Margin="15,0,0,0"
+                    Background="White"
+                    CornerRadius="10"
+                    Padding="15">
+
+                <ScrollViewer VerticalScrollBarVisibility="Auto">
+
+                    <StackPanel>
+
+                        <!-- SELECTED PRODUCT -->
+
+                        <Border Background="#f8f9fa"
+                                CornerRadius="8"
+                                Padding="10"
+                                Margin="0,0,0,15">
+
+                            <StackPanel>
+
+                                <TextBlock Text="Выбранный товар"
+                                           FontWeight="Bold"
+                                           FontSize="16"/>
+
+                                <TextBlock Text="{Binding SelectedUnit.ProductName}"
+                                           Margin="0,5,0,0"
+                                           FontSize="15"/>
+
+                                <TextBlock Text="{Binding SelectedUnit.UnitPrice,
+                                                  StringFormat=Цена: {0:F2} ₽}"
+                                           Foreground="#27ae60"/>
+
+                            </StackPanel>
+
+                        </Border>
+
+                        <!-- REASONS -->
+
+                        <TextBlock Text="Причина возврата"
+                                   FontSize="18"
+                                   FontWeight="Bold"
+                                   Margin="0,0,0,10"/>
+
+                        <!-- NORMAL -->
+
+                        <RadioButton Content="Не подошел клиенту"
+                                     GroupName="ReturnReason"
+                                     IsChecked="{Binding IsClientReason}"
+                                     FontSize="15"
+                                     Margin="0,0,0,10"/>
+
+                        <RadioButton Content="Ошибка комплектации"
+                                     GroupName="ReturnReason"
+                                     IsChecked="{Binding IsWrongKitReason}"
+                                     FontSize="15"
+                                     Margin="0,0,0,20"/>
+
+                        <!-- DEFECTIVE -->
+
+                        <Border Background="#fff5f5"
+                                CornerRadius="8"
+                                Padding="10"
+                                Margin="0,0,0,15">
+
+                            <StackPanel>
+
+                                <TextBlock Text="Дефектный товар"
+                                           Foreground="#e74c3c"
+                                           FontWeight="Bold"
+                                           Margin="0,0,0,10"/>
+
+                                <StackPanel Margin="0,5,0,15">
+
+                                    <RadioButton Content="Не подошел клиенту"
+                 GroupName="ReturnReason"
+                 Checked="Reason_Checked"/>
+
+                                    <RadioButton Content="Ошибка комплектации"
+                 GroupName="ReturnReason"
+                 Checked="Reason_Checked"/>
+
+                                    <RadioButton Content="Товар неисправен"
+                 GroupName="ReturnReason"
+                 Checked="Defective_Checked"/>
+
+                                    <RadioButton Content="Не включается"
+                 GroupName="ReturnReason"
+                 Checked="Defective_Checked"/>
+
+                                    <RadioButton Content="Повреждение корпуса"
+                 GroupName="ReturnReason"
+                 Checked="Defective_Checked"/>
+
+                                    <RadioButton Content="Брак"
+                 GroupName="ReturnReason"
+                 Checked="Defective_Checked"/>
+
+                                </StackPanel>
+                            </StackPanel>
+
+                        </Border>
+
+                        <!-- COMMENT -->
+
+                        <TextBlock Text="Комментарий менеджера"
+                                   FontWeight="Bold"
+                                   Margin="0,0,0,5"/>
+
+                        <TextBox Height="120"
+                                 AcceptsReturn="True"
+                                 TextWrapping="Wrap"
+                                 Text="{Binding ManagerComment, UpdateSourceTrigger=PropertyChanged}"/>
+
+                        <!-- INFO -->
+
+                        <Border Background="#fff3cd"
+                                CornerRadius="8"
+                                Padding="10"
+                                Margin="0,15,0,15">
+
+                            <TextBlock Text="{Binding ReturnDestinationText}"
+                                       TextWrapping="Wrap"
+                                       FontWeight="SemiBold"/>
+
+                        </Border>
+
+                        <!-- BUTTON -->
+
+                        <Button Content="Оформить возврат"
+                                Height="42"
+                                Command="{Binding ProcessReturnCommand}"
+                                Background="#e67e22"
+                                Foreground="White"
+                                FontSize="15"
+                                FontWeight="Bold"
+                                BorderThickness="0"
+                                Cursor="Hand"/>
+
+                    </StackPanel>
+
+                </ScrollViewer>
+
+            </Border>
+
         </Grid>
 
-        <Border Grid.Row="2" Background="{Binding StatusColor}" CornerRadius="5" Padding="10" Margin="0,10,0,0">
-            <TextBlock Text="{Binding StatusMessage}" Foreground="White"/>
+        <!-- STATUS -->
+
+        <Border Grid.Row="2"
+                Background="{Binding StatusColor}"
+                CornerRadius="5"
+                Padding="10"
+                Margin="0,15,0,0">
+
+            <TextBlock Text="{Binding StatusMessage}"
+                       Foreground="White"/>
+
         </Border>
+
     </Grid>
+
 </Page>

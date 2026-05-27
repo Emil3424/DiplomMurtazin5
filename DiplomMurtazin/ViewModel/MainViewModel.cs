@@ -128,6 +128,11 @@ namespace DiplomMurtazin.ViewModel
                     IsSalesSelected = false;
                     IsProductsSelected = false;
                     break;
+                   case "Defective Products":
+                    _mainFrame.Navigate(new DefectiveProductsPage());
+                    IsSalesSelected = false;
+                    IsProductsSelected = false;
+                    break;
 
             }
         }

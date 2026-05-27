@@ -104,7 +104,12 @@
              Command="{Binding NavigateCommand}"
              CommandParameter="ProductUnitHistory"
              Style="{StaticResource NavButtonStyle}"/>
-                    
+
+                    <RadioButton Content="Дефектные товары" 
+     Command="{Binding NavigateCommand}"
+     CommandParameter="Defective Products"
+     Style="{StaticResource NavButtonStyle}"/>
+
                     <RadioButton Content="Дешборд"
                                  Command="{Binding NavigateCommand}"
                                  CommandParameter="Dashbord"
