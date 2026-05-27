@@ -62,7 +62,7 @@
 
         <StackPanel Grid.Row="3" Orientation="Horizontal" HorizontalAlignment="Center" Margin="0,15,0,0">
             <Button Content="Импортировать" Width="140" Height="35" Margin="5" Click="Import_Click" Background="#27ae60" Foreground="White"/>
-            <Button Content="Отмена" Width="100" Height="35" Margin="5" Click="Cancel_Click" Background="#95a5a6" Foreground="White"/>
+            <Button Content="Отмена" Width="140" Height="35" Margin="5" Click="Cancel_Click" Background="#95a5a6" Foreground="White"/>
         </StackPanel>
     </Grid>
 </Window>
