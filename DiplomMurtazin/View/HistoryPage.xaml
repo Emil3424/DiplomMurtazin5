@@ -41,6 +41,7 @@
                              Height="34"
                              Margin="0,0,10,0"
                              Padding="10,5"
+                              FontSize="16" VerticalContentAlignment="Center"
                              Text="{Binding SearchText, UpdateSourceTrigger=PropertyChanged}"
                              ToolTip="Поиск по пользователю, действию, сущности, описанию"/>
 

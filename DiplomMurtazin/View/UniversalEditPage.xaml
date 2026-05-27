@@ -104,7 +104,8 @@
                              Text="{Binding SearchText, UpdateSourceTrigger=PropertyChanged, Delay=500}"
                              Padding="10,5"
                              BorderBrush="#3498db"
-                             BorderThickness="1"/>
+                             BorderThickness="1"
+                              FontSize="16" VerticalContentAlignment="Center"/>
                 </StackPanel>
 
                 <!-- Кнопка сброса -->

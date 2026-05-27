@@ -60,7 +60,7 @@
                     </Grid.ColumnDefinitions>
                     <TextBox Grid.Column="0" Height="35" Text="{Binding SearchText, UpdateSourceTrigger=PropertyChanged, Delay=500}"
                      Padding="10,5" BorderBrush="#3498db" BorderThickness="1"
-                     ToolTip="Поиск по названию, штрих-коду, бренду, артикулу"/>
+                     ToolTip="Поиск по названию, штрих-коду, бренду, артикулу"  FontSize="16" VerticalContentAlignment="Center"/>
                     <ComboBox Grid.Column="1" Height="35" Margin="10,0,0,0"
                       ItemsSource="{Binding Categories}" SelectedItem="{Binding SelectedCategoryFilter}"
                       DisplayMemberPath="CategoryName"/>
@@ -79,11 +79,11 @@
                     </Grid.ColumnDefinitions>
                     <StackPanel Grid.Column="0" Orientation="Horizontal" Margin="0,0,10,0">
                         <TextBlock Text="Цена от:" VerticalAlignment="Center" Margin="0,0,5,0"/>
-                        <TextBox Width="80" Height="30" Text="{Binding MinPrice, UpdateSourceTrigger=PropertyChanged}"/>
+                        <TextBox Width="80" Height="30" Text="{Binding MinPrice, UpdateSourceTrigger=PropertyChanged}" FontSize="16" VerticalContentAlignment="Center"/>
                     </StackPanel>
                     <StackPanel Grid.Column="1" Orientation="Horizontal" Margin="0,0,10,0">
                         <TextBlock Text="до:" VerticalAlignment="Center" Margin="0,0,5,0"/>
-                        <TextBox Width="80" Height="30" Text="{Binding MaxPrice, UpdateSourceTrigger=PropertyChanged}"/>
+                        <TextBox Width="80" Height="30" Text="{Binding MaxPrice, UpdateSourceTrigger=PropertyChanged}" FontSize="16" VerticalContentAlignment="Center"/>
                     </StackPanel>
                     <ComboBox Grid.Column="2" Height="30" Margin="0,0,10,0"
                       ItemsSource="{Binding SortOptions}" SelectedItem="{Binding SelectedSortOption}"

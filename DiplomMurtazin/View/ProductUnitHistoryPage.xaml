@@ -16,7 +16,8 @@
                 <RowDefinition Height="Auto"/>
                 <RowDefinition Height="*"/>
             </Grid.RowDefinitions>
-            <TextBox Height="34" Text="{Binding SearchText, UpdateSourceTrigger=PropertyChanged}" ToolTip="Поиск товара"/>
+            <TextBox Height="34" Text="{Binding SearchText, UpdateSourceTrigger=PropertyChanged}" ToolTip="Поиск товара"
+                      FontSize="16" VerticalContentAlignment="Center"/>
             <DataGrid Grid.Row="1" Margin="0,10,0,0"
                       ItemsSource="{Binding FilteredProducts}"
                       SelectedItem="{Binding SelectedProduct}"

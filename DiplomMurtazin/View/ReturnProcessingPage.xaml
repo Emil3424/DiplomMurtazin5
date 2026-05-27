@@ -13,7 +13,8 @@
 
         <StackPanel Orientation="Horizontal" Margin="0,0,0,10">
             <TextBlock Text="Оформление возврата" FontSize="26" FontWeight="Bold" Foreground="#2c3e50" Margin="0,0,20,0"/>
-            <TextBox Width="250" Height="34" Margin="0,0,8,0" Text="{Binding SearchText, UpdateSourceTrigger=PropertyChanged}"/>
+            <TextBox Width="250" Height="34" Margin="0,0,8,0" Text="{Binding SearchText, UpdateSourceTrigger=PropertyChanged}"
+                      FontSize="16" VerticalContentAlignment="Center"/>
             <Button Content="Найти" Width="90" Height="34" Command="{Binding RefreshCommand}" Background="#3498db" Foreground="White"/>
         </StackPanel>
 

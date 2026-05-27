@@ -112,30 +112,26 @@
                     <StackPanel>
                         <StackPanel Orientation="Horizontal" Margin="0,0,0,8">
                             <Button Content="Добавить товар"
-                                    Width="140"
+                                    Width="120"
                                     Height="32"
                                     Margin="0,0,8,0"
                                     Command="{Binding AddItemCommand}"
                                     Background="#27ae60"
                                     Foreground="White"/>
                             <Button Content="Удалить"
-                                    Width="90"
+                                    Width="120"
                                     Height="32"
                                     Margin="0,0,8,0"
                                     Command="{Binding RemoveItemCommand}"
                                     Background="#e74c3c"
                                     Foreground="White"/>
                             <Button Content="Очистить"
-                                    Width="90"
+                                    Width="120"
                                     Height="32"
                                     Command="{Binding ClearCommand}"
                                     Background="#95a5a6"
                                     Foreground="White"/>
-                            <!-- В секцию с кнопками добавьте: -->
-                            <Button Content="Отменить импорт" 
-        Width="120" Height="36" Margin="5"
-        Command="{Binding CancelImportCommand}"
-        Background="#e74c3c" Foreground="White"/>
+                            
 
                         </StackPanel>
 
@@ -199,27 +195,40 @@
                     </StackPanel>
                 </Border>
 
-                <StackPanel Grid.Row="7" Orientation="Horizontal" HorizontalAlignment="Center" Margin="0,0,0,10">
-                    <Button Content="Сохранить черновик"
-                            Width="160"
+                <StackPanel Grid.Row="7" Orientation="Vertical" HorizontalAlignment="Center" Margin="0,0,0,10">
+                    <StackPanel Orientation="Horizontal" Margin="0,0,0,5">
+
+                        <Button Content="Сохранить черновик"
+                            Width="175"
                             Height="36"
                             Margin="0,0,8,0"
                             Command="{Binding SaveDraftCommand}"
                             Background="#3498db"
                             Foreground="White"/>
-                    <Button Content="Экспорт ТОРГ-12"
-                            Width="150"
+                        <Button Content="Экспорт ТОРГ-12"
+                                Width="175"
                             Height="36"
                             Margin="0,0,8,0"
                             Command="{Binding ExportTorg12Command}"
                             Background="#2c3e50"
                             Foreground="White"/>
-                    <Button Content="Импорт"
-                            Width="90"
-                            Height="36"
-                            Command="{Binding ImportTorg12Command}"
-                            Background="#16a085"
-                            Foreground="White"/>
+                    </StackPanel>
+
+                    <StackPanel Orientation="Horizontal" Margin="0,0,0,5">
+                        <!-- В секцию с кнопками добавьте: -->
+                        <Button Content="Отменить импорт" 
+        Width="175" Height="36"
+        Command="{Binding CancelImportCommand}"
+                            Margin="0,0,8,0"
+        Background="#e74c3c" Foreground="White"/>
+                        <Button Content="Импорт"
+        Width="175"
+        Height="36"
+        Command="{Binding ImportTorg12Command}"
+        Background="#16a085"
+                            Margin="0,0,8,0"
+        Foreground="White"/>
+                    </StackPanel>
                 </StackPanel>
 
                 <Border Grid.Row="8" Background="{Binding StatusColor}" CornerRadius="6" Padding="10">
