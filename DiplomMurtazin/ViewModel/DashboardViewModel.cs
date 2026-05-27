@@ -43,6 +43,7 @@ namespace DiplomMurtazin.ViewModel
         private ObservableCollection<Employees> _cashiers;
         private ObservableCollection<Categories> _categories;
 
+
         public DateTime StartDate { get => _startDate; set => Set(ref _startDate, value); }
         public DateTime EndDate { get => _endDate; set => Set(ref _endDate, value); }
         public Employees SelectedCashier { get => _selectedCashier; set => Set(ref _selectedCashier, value); }
