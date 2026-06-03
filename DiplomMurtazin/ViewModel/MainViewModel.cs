@@ -41,8 +41,7 @@ namespace DiplomMurtazin.ViewModel
             NavigateCommand = new RelayCommand(Navigate);
             LogoutCommand = new RelayCommand(Logout);
 
-            // По умолчанию открываем страницу продаж
-            Navigate("Sales");
+            Navigate("Torg12");
         }
 
         private void Navigate(object parameter)

@@ -268,51 +268,7 @@
                 </StackPanel>
             </Border>
 
-            <!-- Отчет по возвратам -->
-            <Border Background="White" Padding="20" CornerRadius="10" Margin="0,20,0,20" BorderBrush="#bdc3c7" BorderThickness="1">
-                <StackPanel>
-                    <TextBlock Text="Отчет по возвратам" FontSize="20" FontWeight="Bold" Margin="0,0,0,15"/>
-                    <Grid Margin="0,0,0,10">
-                        <Grid.ColumnDefinitions>
-                            <ColumnDefinition Width="Auto"/>
-                            <ColumnDefinition Width="200"/>
-                            <ColumnDefinition Width="Auto"/>
-                            <ColumnDefinition Width="200"/>
-                            <ColumnDefinition Width="Auto"/>
-                            <ColumnDefinition Width="150"/>
-                            <ColumnDefinition Width="Auto"/>
-                            <ColumnDefinition Width="150"/>
-                            <ColumnDefinition Width="*"/>
-                        </Grid.ColumnDefinitions>
-                        <TextBlock Grid.Column="0" Text="С:" Margin="0,0,10,0" VerticalAlignment="Center"/>
-                        <DatePicker Grid.Column="1" SelectedDate="{Binding ReturnStartDate}"/>
-                        <TextBlock Grid.Column="2" Text="По:" Margin="10,0,10,0" VerticalAlignment="Center"/>
-                        <DatePicker Grid.Column="3" SelectedDate="{Binding ReturnEndDate}"/>
-                        <TextBlock Grid.Column="4" Text="Статус:" Margin="10,0,10,0" VerticalAlignment="Center"/>
-                        <ComboBox Grid.Column="5" ItemsSource="{Binding ReturnStatuses}" SelectedItem="{Binding ReturnStatusFilter}"/>
-                        <TextBlock Grid.Column="6" Text="Гарантия:" Margin="10,0,10,0" VerticalAlignment="Center"/>
-                        <ComboBox Grid.Column="7" ItemsSource="{Binding WarrantyOptions}" SelectedItem="{Binding SelectedWarrantyOption}"/>
-                        <Button Grid.Column="8" Content="Сформировать" Command="{Binding GenerateReturnReportCommand}" Width="120" HorizontalAlignment="Left" Background="#3498db" Foreground="White"/>
-                    </Grid>
-                    <DataGrid ItemsSource="{Binding ReturnReport}" AutoGenerateColumns="False" MaxHeight="300" Margin="0,0,0,10">
-                        <DataGrid.Columns>
-                            <DataGridTextColumn Header="ID" Binding="{Binding ReturnID}" Width="60"/>
-                            <DataGridTextColumn Header="Товар" Binding="{Binding ProductName}" Width="*"/>
-                            <DataGridTextColumn Header="Дата" Binding="{Binding ReturnDate, StringFormat=dd.MM.yyyy}" Width="100"/>
-                            <DataGridTextColumn Header="Причина" Binding="{Binding ReturnReason}" Width="180"/>
-                            <DataGridTextColumn Header="Сумма" Binding="{Binding RefundAmount, StringFormat={}{0:F2} ₽}" Width="100"/>
-                            <DataGridTextColumn Header="Статус" Binding="{Binding Status}" Width="100"/>
-                        </DataGrid.Columns>
-                    </DataGrid>
-                    <StackPanel Orientation="Horizontal">
-                        <Button Content="PDF" Command="{Binding ExportReturnReportPdfCommand}" Margin="0,0,10,0" Width="80" Background="#2c3e50" Foreground="White"/>
-                        <Button Content="CSV" Command="{Binding ExportReturnReportCsvCommand}" Margin="0,0,10,0" Width="80" Background="#27ae60" Foreground="White"/>
-                        <Button Content="Excel" Command="{Binding ExportReturnReportExcelCommand}" Width="80" Background="#8e44ad" Foreground="White"/>
-                    </StackPanel>
-                </StackPanel>
-            </Border>
-
-            <!-- Отчет по накладным ТОРГ-12 -->
+                        <!-- Отчет по накладным ТОРГ-12 -->
             <Border Background="White" Padding="20" CornerRadius="10" Margin="0,20,0,20" BorderBrush="#bdc3c7" BorderThickness="1">
                 <StackPanel>
                     <TextBlock Text="Отчет по накладным ТОРГ-12" FontSize="20" FontWeight="Bold" Margin="0,0,0,15"/>

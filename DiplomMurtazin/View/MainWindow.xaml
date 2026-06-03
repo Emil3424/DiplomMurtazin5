@@ -42,12 +42,12 @@
                         </StackPanel>
                     </Border>
 
-                    <!-- Кнопки навигации -->
-                    <RadioButton Content="Продажи" 
+                    <RadioButton Content=" ТОРГ-12" 
                          Command="{Binding NavigateCommand}"
-                         CommandParameter="Sales"
-                         IsChecked="{Binding IsSalesSelected}"
+                         CommandParameter="Torg12"
                          Style="{StaticResource NavButtonStyle}"/>
+                    
+                    <!-- Кнопки навигации -->
 
                     <RadioButton Content="Товары" 
                          Command="{Binding NavigateCommand}"
@@ -55,30 +55,59 @@
                          IsChecked="{Binding IsProductsSelected}"
                          Style="{StaticResource NavButtonStyle}"/>
 
-                    <RadioButton Content=" Все таблицы" 
+                    <RadioButton Content="Продажи" 
                          Command="{Binding NavigateCommand}"
-                         CommandParameter="Universal"
-                         Style="{StaticResource NavButtonStyle}" Cursor="Hand"/>
-
-                    <RadioButton Content=" Сотрудники" 
-                         Command="{Binding NavigateCommand}"
-                         CommandParameter="Employees"
+                         CommandParameter="Sales"
+                         IsChecked="{Binding IsSalesSelected}"
                          Style="{StaticResource NavButtonStyle}"/>
+
+                    <RadioButton Content=" История индивидуального товара" 
+Command="{Binding NavigateCommand}"
+CommandParameter="ProductUnitHistory"
+Style="{StaticResource NavButtonStyle}"/>
+
+                    <RadioButton Content="История всех товаров" 
+                         Command="{Binding NavigateCommand}"
+                         CommandParameter="History"
+                         Style="{StaticResource NavButtonStyle}"/>
+
+                    <RadioButton Content="Дешборд"
+                                 Command="{Binding NavigateCommand}"
+                                 CommandParameter="Dashbord"
+                                 Style="{StaticResource NavButtonStyle}"/>
+
 
                     <RadioButton Content=" Отчеты" 
                          Command="{Binding NavigateCommand}"
                          CommandParameter="Reports"
                          Style="{StaticResource NavButtonStyle}"/>
 
-                    <RadioButton Content=" ТОРГ-12" 
-                         Command="{Binding NavigateCommand}"
-                         CommandParameter="Torg12"
-                         Style="{StaticResource NavButtonStyle}"/>
+                    <RadioButton Content=" Оформление возврата" 
+             Command="{Binding NavigateCommand}"
+             CommandParameter="ReturnProcessing"
+             Style="{StaticResource NavButtonStyle}"/>
 
-                    <RadioButton Content=" История" 
+
+
+                    <RadioButton Content="Дефектные товары" 
+     Command="{Binding NavigateCommand}"
+     CommandParameter="Defective Products"
+     Style="{StaticResource NavButtonStyle}"/>
+
+
+                    <RadioButton Content=" Сотрудники" 
                          Command="{Binding NavigateCommand}"
-                         CommandParameter="History"
+                         CommandParameter="Employees"
                          Style="{StaticResource NavButtonStyle}"/>
+                    
+                    <RadioButton Content=" Все таблицы" 
+                         Command="{Binding NavigateCommand}"
+                         CommandParameter="Universal"
+                         Style="{StaticResource NavButtonStyle}" Cursor="Hand"/>
+
+
+
+
 
                     <RadioButton Content="Представления" 
                          Command="{Binding NavigateCommand}"
@@ -90,30 +119,12 @@
                          CommandParameter="ViewDisplay"
                          Style="{StaticResource NavButtonStyle}"/>
 
-                    <RadioButton Content=" Уведомления" 
+                    <!--<RadioButton Content=" Уведомления" 
                          Command="{Binding NavigateCommand}"
                          CommandParameter="Notifications"
-                         Style="{StaticResource NavButtonStyle}"/>
+                         Style="{StaticResource NavButtonStyle}"/>-->
 
-                <RadioButton Content=" Оформление возврата" 
-             Command="{Binding NavigateCommand}"
-             CommandParameter="ReturnProcessing"
-             Style="{StaticResource NavButtonStyle}"/>
 
-                <RadioButton Content=" История индивидуального товара" 
-             Command="{Binding NavigateCommand}"
-             CommandParameter="ProductUnitHistory"
-             Style="{StaticResource NavButtonStyle}"/>
-
-                    <RadioButton Content="Дефектные товары" 
-     Command="{Binding NavigateCommand}"
-     CommandParameter="Defective Products"
-     Style="{StaticResource NavButtonStyle}"/>
-
-                    <RadioButton Content="Дешборд"
-                                 Command="{Binding NavigateCommand}"
-                                 CommandParameter="Dashbord"
-                                 Style="{StaticResource NavButtonStyle}"/>
 
                     <Separator Background="#7f8c8d" Margin="10"/>
 

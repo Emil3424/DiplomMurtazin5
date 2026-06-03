@@ -47,6 +47,7 @@
                     <DataGridTextColumn Header="Наименование" Binding="{Binding ProductName}" Width="*"/>
                     <DataGridTextColumn Header="Штрих-код" Binding="{Binding Barcode}" Width="140"/>
                     <DataGridTextColumn Header="Цена" Binding="{Binding UnitPrice, StringFormat={}{0:F2}}" Width="90"/>
+                    <DataGridTextColumn Header="Остаток" Binding="{Binding Quantity}" Width="80"/>
                 </DataGrid.Columns>
             </DataGrid>
         </Grid>

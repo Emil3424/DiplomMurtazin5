@@ -14,6 +14,45 @@ using System.Windows.Input;
 
 namespace DiplomMurtazin.ViewModel
 {
+    // Расширенная модель товара с остатком для отображения в гриде
+    public class ProductWithStock : BaseViewModel
+    {
+        public int ProductID { get; set; }
+        public string ProductName { get; set; }
+        public string Barcode { get; set; }
+        public decimal UnitPrice { get; set; }
+        public int? WarrantyMonths { get; set; }
+        public int? MinStockLevel { get; set; }
+        public string Description { get; set; }
+        public int? ReturnDays { get; set; }
+        public int CategoryID { get; set; }
+
+        private int _quantity;
+        public int Quantity
+        {
+            get => _quantity;
+            set => Set(ref _quantity, value);
+        }
+
+        // Конвертация из Products
+        public static ProductWithStock FromProduct(Products product, int stockQuantity)
+        {
+            return new ProductWithStock
+            {
+                ProductID = product.ProductID,
+                ProductName = product.ProductName,
+                Barcode = product.Barcode,
+                UnitPrice = product.UnitPrice,
+                WarrantyMonths = product.WarrantyMonths,
+                MinStockLevel = product.MinStockLevel,
+                Description = product.Description,
+                ReturnDays = product.ReturnDays,
+                CategoryID = product.CategoryID,
+                Quantity = stockQuantity
+            };
+        }
+    }
+
     public class MissingImportItem : BaseViewModel
     {
         public int MissingID { get; set; }
@@ -65,9 +104,9 @@ namespace DiplomMurtazin.ViewModel
 
     public class Torg12ViewModel : BaseViewModel
     {
-        private ObservableCollection<Products> _allProducts = new ObservableCollection<Products>();
-        private ObservableCollection<Products> _filteredProducts = new ObservableCollection<Products>();
-        private Products _selectedProduct;
+        private ObservableCollection<ProductWithStock> _allProducts = new ObservableCollection<ProductWithStock>();
+        private ObservableCollection<ProductWithStock> _filteredProducts = new ObservableCollection<ProductWithStock>();
+        private ProductWithStock _selectedProduct;
         private string _searchText;
 
         private ObservableCollection<Torg12LineItem> _items = new ObservableCollection<Torg12LineItem>();
@@ -100,13 +139,13 @@ namespace DiplomMurtazin.ViewModel
             set => Set(ref _selectedMissingItem, value);
         }
 
-        public ObservableCollection<Products> FilteredProducts
+        public ObservableCollection<ProductWithStock> FilteredProducts
         {
             get => _filteredProducts;
             set => Set(ref _filteredProducts, value);
         }
 
-        public Products SelectedProduct
+        public ProductWithStock SelectedProduct
         {
             get => _selectedProduct;
             set => Set(ref _selectedProduct, value);
@@ -188,7 +227,6 @@ namespace DiplomMurtazin.ViewModel
             {
                 if (Set(ref _hasActiveImport, value))
                 {
-                    // Принудительно обновляем состояние команд
                     CommandManager.InvalidateRequerySuggested();
                 }
             }
@@ -207,7 +245,7 @@ namespace DiplomMurtazin.ViewModel
         public Torg12ViewModel()
         {
             LoadedCommand = new RelayCommand(_ => LoadProducts());
-            AddItemCommand = new RelayCommand(_ => AddSelectedProduct(), _ => SelectedProduct != null);
+            AddItemCommand = new RelayCommand(_ => AddSelectedProduct(), _ => SelectedProduct != null && SelectedProduct.Quantity > 0);
             RemoveItemCommand = new RelayCommand(_ => RemoveSelectedItem(), _ => SelectedItem != null);
             ClearCommand = new RelayCommand(_ => Clear());
             SaveDraftCommand = new RelayCommand(_ => SaveDraft(), _ => Items.Any());
@@ -221,15 +259,28 @@ namespace DiplomMurtazin.ViewModel
 
             DocumentNumber = $"ТОРГ12-{DateTime.Now:yyyyMMddHHmmss}";
         }
+
         private void LoadProducts()
         {
             try
             {
                 using (var context = new KPMurtazinEntities())
                 {
-                    var products = context.Products.OrderBy(p => p.ProductName).ToList();
-                    _allProducts = new ObservableCollection<Products>(products);
-                    FilteredProducts = new ObservableCollection<Products>(products);
+                    // Получаем все товары с их текущими остатками
+                    var products = context.Products.ToList();
+                    var allWithStocks = new List<ProductWithStock>();
+
+                    foreach (var product in products)
+                    {
+                        var stockQuantity = context.StockBalances
+                            .Where(sb => sb.ProductID == product.ProductID)
+                            .Sum(sb => (int?)sb.Quantity) ?? 0;
+
+                        allWithStocks.Add(ProductWithStock.FromProduct(product, stockQuantity));
+                    }
+
+                    _allProducts = new ObservableCollection<ProductWithStock>(allWithStocks.OrderBy(p => p.ProductName));
+                    FilteredProducts = new ObservableCollection<ProductWithStock>(_allProducts);
                 }
                 LoadMissingItems();
             }
@@ -264,7 +315,7 @@ ORDER BY CreatedDate ASC";
         {
             if (string.IsNullOrWhiteSpace(SearchText))
             {
-                FilteredProducts = new ObservableCollection<Products>(_allProducts);
+                FilteredProducts = new ObservableCollection<ProductWithStock>(_allProducts);
                 return;
             }
 
@@ -273,7 +324,7 @@ ORDER BY CreatedDate ASC";
                 (p.ProductName ?? "").ToLower().Contains(search) ||
                 (p.Barcode ?? "").Contains(SearchText)).ToList();
 
-            FilteredProducts = new ObservableCollection<Products>(filtered);
+            FilteredProducts = new ObservableCollection<ProductWithStock>(filtered);
         }
 
         private int GetAvailableStock(int productId)
@@ -295,7 +346,14 @@ ORDER BY CreatedDate ASC";
         {
             if (SelectedProduct == null) return;
 
-            int stock = GetAvailableStock(SelectedProduct.ProductID);
+            int stock = SelectedProduct.Quantity; // Используем уже загруженный остаток
+
+            if (stock <= 0)
+            {
+                SetStatus($"Нет остатка для '{SelectedProduct.ProductName}'", true);
+                return;
+            }
+
             var existing = Items.FirstOrDefault(i => i.ProductID == SelectedProduct.ProductID);
             if (existing != null)
             {
@@ -307,12 +365,7 @@ ORDER BY CreatedDate ASC";
 
                 existing.Quantity += 1;
                 OnPropertyChanged(nameof(TotalAmount));
-                return;
-            }
-
-            if (stock <= 0)
-            {
-                SetStatus($"Нет остатка для '{SelectedProduct.ProductName}'", true);
+                SetStatus($"Количество увеличено: {SelectedProduct.ProductName}", false);
                 return;
             }
 
@@ -496,6 +549,11 @@ VALUES (@tid, @pid, @qty, @price);";
                 ShowTorg12Receipt();
                 AuditLogger.Log("EXPORT", "TORG12", $"Экспорт ТОРГ-12 №{DocumentNumber}", metadata: $"File={Path.GetFileName(dialog.FileName)}");
                 SetStatus($"ТОРГ-12 экспортирован: {Path.GetFileName(dialog.FileName)}", false);
+
+                LoadProducts();
+
+                // ОЧИЩАЕМ ФОРМУ
+                Clear();
             }
             catch (Exception ex)
             {
@@ -775,6 +833,7 @@ SELECT CAST(SCOPE_IDENTITY() AS INT);";
                 }
 
                 LoadMissingItems();
+                LoadProducts(); // Перезагружаем товары с новыми остатками
 
                 // Принудительно обновляем команды
                 RefreshCommands();
@@ -814,12 +873,14 @@ SELECT CAST(SCOPE_IDENTITY() AS INT);";
                 return wnd.GetProduct();
             return null;
         }
+
         private void RefreshCommands()
         {
             CommandManager.InvalidateRequerySuggested();
             OnPropertyChanged(nameof(HasActiveImport));
             OnPropertyChanged(nameof(CancelImportCommand));
         }
+
         public void CancelImport()
         {
             if (_lastImportSnapshot == null)
@@ -846,7 +907,6 @@ SELECT CAST(SCOPE_IDENTITY() AS INT);";
                 LoadProducts();
                 LoadMissingItems();
 
-                // Принудительно обновляем команды
                 RefreshCommands();
 
                 SetStatus("Импорт отменён. Данные восстановлены.", false);

@@ -221,6 +221,10 @@ namespace DiplomMurtazin.ViewModel
             ExportTorg12ReportCsvCommand = new RelayCommand(ExportTorg12ReportCsv, _ => Torg12Report != null && Torg12Report.Any());
             ExportTorg12ReportExcelCommand = new RelayCommand(ExportTorg12ReportExcel, _ => Torg12Report != null && Torg12Report.Any());
 
+            ExportProductCatalogPdfCommand = new RelayCommand(ExportProductCatalogPdf);
+            ExportProductCatalogCsvCommand = new RelayCommand(ExportProductCatalogCsv);
+            ExportProductCatalogExcelCommand = new RelayCommand(ExportProductCatalogExcel);
+
             AddSelectedProductCommand =
     new RelayCommand(AddSelectedProducts);
 
@@ -300,6 +304,314 @@ namespace DiplomMurtazin.ViewModel
             StatusColor = "#27ae60";
         }
         public ICommand AddSelectedProductCommand { get; }
+        private void ExportProductCatalogExcel(object parameter)
+        {
+            try
+            {
+                var dialog = new SaveFileDialog
+                {
+                    Filter = "Excel files (*.xls)|*.xls",
+                    FileName = $"Каталог_товаров_{DateTime.Now:yyyyMMddHHmmss}.xls",
+                    DefaultExt = ".xls"
+                };
+
+                if (dialog.ShowDialog() == true)
+                {
+                    CreateProductCatalogExcel(dialog.FileName);
+                    OnReportSaved(dialog.FileName, "Каталог товаров", "Excel");
+                }
+            }
+            catch (Exception ex)
+            {
+                StatusMessage = $"Ошибка сохранения: {ex.Message}";
+                StatusColor = "#e74c3c";
+            }
+        }
+        private void CreateProductCatalogExcel(string filename)
+        {
+            var products = _context.Products
+                .Include(p => p.Categories)
+                .ToList();
+
+            var stockBalances = _context.StockBalances
+                .GroupBy(sb => sb.ProductID)
+                .Select(g => new { ProductId = g.Key, TotalStock = g.Sum(sb => sb.Quantity) })
+                .ToDictionary(x => x.ProductId, x => x.TotalStock);
+
+            using (var writer = new StreamWriter(filename, false, System.Text.Encoding.Unicode))
+            {
+                writer.WriteLine("ID\tНаименование\tКатегория\tШтрих-код\tПроизводитель\tМодель\tЦена\tГарантия (мес)\tОстаток");
+                foreach (var product in products.OrderBy(p => p.ProductName))
+                {
+                    int stock = stockBalances.ContainsKey(product.ProductID) ? stockBalances[product.ProductID] : 0;
+                    writer.WriteLine($"{product.ProductID}\t{product.ProductName}\t{product.Categories?.CategoryName ?? ""}\t{product.Barcode}\t{product.Manufacturer ?? ""}\t{product.Model ?? ""}\t{product.UnitPrice:F2}\t{product.WarrantyMonths}\t{stock}");
+                }
+            }
+        }
+        private void ExportProductCatalogPdf(object parameter)
+        {
+            try
+            {
+                var dialog = new SaveFileDialog
+                {
+                    Filter = "PDF files (*.pdf)|*.pdf",
+                    FileName = $"Каталог_товаров_{DateTime.Now:yyyyMMddHHmmss}.pdf",
+                    DefaultExt = ".pdf"
+                };
+
+                if (dialog.ShowDialog() == true)
+                {
+                    CreateProductCatalogPdf(dialog.FileName);
+                    OnReportSaved(dialog.FileName, "Каталог товаров", "PDF");
+                }
+            }
+            catch (Exception ex)
+            {
+                StatusMessage = $"Ошибка сохранения: {ex.Message}";
+                StatusColor = "#e74c3c";
+            }
+        }
+        private void OnReportSaved(string fileName, string reportName, string format)
+        {
+            StatusMessage = $"{reportName} сохранен: {Path.GetFileName(fileName)}";
+            StatusColor = "#27ae60";
+            AuditLogger.Log("REPORT_EXPORT", reportName, $"{reportName} экспортирован в формат {format}", metadata: $"File={Path.GetFileName(fileName)}");
+
+            var result = MessageBox.Show("Файл сохранен. Открыть его?",
+                "Успешно", MessageBoxButton.YesNo, MessageBoxImage.Question);
+            if (result == MessageBoxResult.Yes)
+            {
+                Process.Start(fileName);
+            }
+        }
+        private void CreateProductCatalogPdf(string filename)
+        {
+            var products = _context.Products
+                .Include(p => p.Categories)
+                .OrderBy(p => p.ProductName)
+                .ToList();
+
+            using (var document = new PdfDocument())
+            {
+                document.Info.Title = "Каталог товаров";
+                var page = document.AddPage();
+                page.Width = XUnit.FromPoint(595);
+                page.Height = XUnit.FromPoint(842);
+                var gfx = XGraphics.FromPdfPage(page);
+                var fontTitle = new XFont("Arial", 14, XFontStyleEx.Bold);
+                var font = new XFont("Arial", 9, XFontStyleEx.Regular);
+                double y = 30;
+                const double left = 30;
+
+                gfx.DrawString("КАТАЛОГ ТОВАРОВ", fontTitle, XBrushes.DarkBlue, left, y);
+                y += 25;
+                gfx.DrawString("Наименование", font, XBrushes.Black, left, y);
+                gfx.DrawString("Категория", font, XBrushes.Black, left + 220, y);
+                gfx.DrawString("Цена", font, XBrushes.Black, left + 360, y);
+                y += 15;
+
+                foreach (var product in products)
+                {
+                    if (y > page.Height.Point - 40)
+                    {
+                        page = document.AddPage();
+                        page.Width = XUnit.FromPoint(595);
+                        page.Height = XUnit.FromPoint(842);
+                        gfx.Dispose();
+                        gfx = XGraphics.FromPdfPage(page);
+                        y = 30;
+                    }
+
+                    gfx.DrawString(TruncateString(product.ProductName, 40), font, XBrushes.Black, left, y);
+                    gfx.DrawString(TruncateString(product.Categories?.CategoryName ?? "", 20), font, XBrushes.Black, left + 220, y);
+                    gfx.DrawString($"{product.UnitPrice:F2} ₽", font, XBrushes.Black, left + 360, y);
+                    y += 14;
+                }
+
+                gfx.Dispose();
+                document.Save(filename);
+            }
+        }
+        private void ExportProductCatalogCsv(object parameter)
+        {
+            try
+            {
+                var dialog = new SaveFileDialog
+                {
+                    Filter = "CSV files (*.csv)|*.csv",
+                    FileName = $"Каталог_товаров_{DateTime.Now:yyyyMMddHHmmss}.csv",
+                    DefaultExt = ".csv"
+                };
+
+                if (dialog.ShowDialog() == true)
+                {
+                    CreateProductCatalogCsv(dialog.FileName);
+                    OnReportSaved(dialog.FileName, "Каталог товаров", "CSV");
+                }
+            }
+            catch (Exception ex)
+            {
+                StatusMessage = $"Ошибка сохранения: {ex.Message}";
+                StatusColor = "#e74c3c";
+            }
+        }
+        private void CreateProductCatalogCsv(string filename)
+        {
+            var products = _context.Products
+                .Include(p => p.Categories)
+                .ToList();
+
+            var stockBalances = _context.StockBalances
+                .GroupBy(sb => sb.ProductID)
+                .Select(g => new { ProductId = g.Key, TotalStock = g.Sum(sb => sb.Quantity) })
+                .ToDictionary(x => x.ProductId, x => x.TotalStock);
+
+            using (var writer = new StreamWriter(filename, false, System.Text.Encoding.UTF8))
+            {
+                // Заголовки
+                writer.WriteLine("ID;Наименование;Категория;Штрих-код;Производитель;Модель;Цена;Гарантия (мес);Остаток");
+
+                // Данные
+                foreach (var product in products.OrderBy(p => p.ProductName))
+                {
+                    int stock = stockBalances.ContainsKey(product.ProductID) ? stockBalances[product.ProductID] : 0;
+
+                    writer.WriteLine($"{product.ProductID};" +
+                                    $"{EscapeCsv(product.ProductName)};" +
+                                    $"{EscapeCsv(product.Categories?.CategoryName ?? "")};" +
+                                    $"{product.Barcode};" +
+                                    $"{EscapeCsv(product.Manufacturer ?? "")};" +
+                                    $"{EscapeCsv(product.Model ?? "")};" +
+                                    $"{product.UnitPrice:F2};" +
+                                    $"{product.WarrantyMonths};" +
+                                    $"{stock}");
+                }
+            }
+        }
+        private void CreateSalesReportPdf(string filename)
+        {
+            using (var document = new PdfDocument())
+            {
+                document.Info.Title = $"Отчет по продажам за {StartDate:dd.MM.yyyy} - {EndDate:dd.MM.yyyy}";
+                document.Info.Creator = "KPMurtazin";
+
+                var page = document.AddPage();
+                page.Width = XUnit.FromPoint(595); // A4 ширина
+                page.Height = XUnit.FromPoint(842); // A4 высота
+
+                // Не используем using для gfx, а создаем новую переменную при смене страницы
+                var gfx = XGraphics.FromPdfPage(page);
+
+                try
+                {
+                    var fontTitle = new XFont("Arial", 16, XFontStyleEx.Bold);
+                    var fontHeader = new XFont("Arial", 10, XFontStyleEx.Bold);
+                    var fontNormal = new XFont("Arial", 9, XFontStyleEx.Regular);
+
+                    double yPos = 30;
+                    double leftMargin = 40;
+
+                    // Заголовок
+                    gfx.DrawString("ОТЧЕТ ПО ПРОДАЖАМ", fontTitle, XBrushes.DarkBlue, leftMargin, yPos);
+                    yPos += 25;
+                    gfx.DrawString($"Период: {StartDate:dd.MM.yyyy} - {EndDate:dd.MM.yyyy}", fontNormal, XBrushes.Black, leftMargin, yPos);
+                    yPos += 25;
+                    gfx.DrawString($"Дата формирования: {DateTime.Now:dd.MM.yyyy HH:mm}", fontNormal, XBrushes.Black, leftMargin, yPos);
+                    yPos += 30;
+
+                    // Сводка
+                    if (SalesSummary != null && SalesSummary.Count > 0)
+                    {
+                        gfx.DrawString("СВОДКА ПО СОТРУДНИКАМ", fontHeader, XBrushes.DarkBlue, leftMargin, yPos);
+                        yPos += 20;
+
+                        // Заголовки таблицы
+                        gfx.DrawString("Сотрудник", fontHeader, XBrushes.Black, leftMargin, yPos);
+                        gfx.DrawString("Продаж", fontHeader, XBrushes.Black, leftMargin + 200, yPos);
+                        gfx.DrawString("Сумма", fontHeader, XBrushes.Black, leftMargin + 280, yPos);
+                        gfx.DrawString("Ср. чек", fontHeader, XBrushes.Black, leftMargin + 360, yPos);
+                        yPos += 15;
+
+                        foreach (var item in SalesSummary)
+                        {
+                            gfx.DrawString(item.EmployeeName, fontNormal, XBrushes.Black, leftMargin, yPos);
+                            gfx.DrawString(item.SalesCount.ToString(), fontNormal, XBrushes.Black, leftMargin + 200, yPos);
+                            gfx.DrawString(item.TotalAmount.ToString("F2") + " ₽", fontNormal, XBrushes.Black, leftMargin + 280, yPos);
+                            gfx.DrawString(item.AverageCheck.ToString("F2") + " ₽", fontNormal, XBrushes.Black, leftMargin + 360, yPos);
+                            yPos += 15;
+                        }
+                        yPos += 20;
+                    }
+
+                    // Детали продаж
+                    gfx.DrawString("ДЕТАЛИ ПРОДАЖ", fontHeader, XBrushes.DarkBlue, leftMargin, yPos);
+                    yPos += 20;
+
+                    // Заголовки деталей
+                    gfx.DrawString("№", fontHeader, XBrushes.Black, leftMargin, yPos);
+                    gfx.DrawString("Дата", fontHeader, XBrushes.Black, leftMargin + 40, yPos);
+                    gfx.DrawString("Сотрудник", fontHeader, XBrushes.Black, leftMargin + 120, yPos);
+                    gfx.DrawString("Способ оплаты", fontHeader, XBrushes.Black, leftMargin + 250, yPos);
+                    gfx.DrawString("Кол-во", fontHeader, XBrushes.Black, leftMargin + 350, yPos);
+                    gfx.DrawString("Сумма", fontHeader, XBrushes.Black, leftMargin + 400, yPos);
+                    yPos += 15;
+
+                    int count = 0;
+                    foreach (var item in SalesReport.Take(50)) // Ограничим для примера
+                    {
+                        if (yPos > page.Height.Point - 50)
+                        {
+                            // Новая страница
+                            page = document.AddPage();
+                            page.Width = XUnit.FromPoint(595);
+                            page.Height = XUnit.FromPoint(842);
+
+                            // Освобождаем предыдущий gfx и создаем новый
+                            gfx.Dispose();
+                            gfx = XGraphics.FromPdfPage(page);
+
+                            yPos = 30;
+
+                            // Повторяем заголовки на новой странице
+                            gfx.DrawString("№", fontHeader, XBrushes.Black, leftMargin, yPos);
+                            gfx.DrawString("Дата", fontHeader, XBrushes.Black, leftMargin + 40, yPos);
+                            gfx.DrawString("Сотрудник", fontHeader, XBrushes.Black, leftMargin + 120, yPos);
+                            gfx.DrawString("Способ оплаты", fontHeader, XBrushes.Black, leftMargin + 250, yPos);
+                            gfx.DrawString("Кол-во", fontHeader, XBrushes.Black, leftMargin + 350, yPos);
+                            gfx.DrawString("Сумма", fontHeader, XBrushes.Black, leftMargin + 400, yPos);
+                            yPos += 15;
+                        }
+
+                        gfx.DrawString(item.SaleId.ToString(), fontNormal, XBrushes.Black, leftMargin, yPos);
+                        gfx.DrawString(item.SaleDate.ToString("dd.MM.yy HH:mm"), fontNormal, XBrushes.Black, leftMargin + 40, yPos);
+                        gfx.DrawString(item.EmployeeName, fontNormal, XBrushes.Black, leftMargin + 120, yPos);
+                        gfx.DrawString(item.PaymentMethod, fontNormal, XBrushes.Black, leftMargin + 250, yPos);
+                        gfx.DrawString(item.ItemsCount.ToString(), fontNormal, XBrushes.Black, leftMargin + 350, yPos);
+                        gfx.DrawString(item.TotalAmount.ToString("F2") + " ₽", fontNormal, XBrushes.Black, leftMargin + 400, yPos);
+                        yPos += 15;
+                        count++;
+                    }
+
+                    if (SalesReport.Count > 50)
+                    {
+                        yPos += 10;
+                        gfx.DrawString($"... и еще {SalesReport.Count - 50} записей", fontNormal, XBrushes.Gray, leftMargin, yPos);
+                    }
+
+                    // Итог
+                    yPos = page.Height.Point - 50;
+                    gfx.DrawString("────────────────────────────────────", fontNormal, XBrushes.Black, leftMargin, yPos);
+                    yPos += 15;
+                    gfx.DrawString($"ОБЩИЙ ИТОГ: {SalesReport.Sum(s => s.TotalAmount):F2} ₽", fontHeader, XBrushes.DarkBlue, leftMargin, yPos);
+                }
+                finally
+                {
+                    gfx.Dispose();
+                }
+
+                document.Save(filename);
+            }
+        }
 
         private void LoadCategories()
         {
@@ -369,83 +681,12 @@ namespace DiplomMurtazin.ViewModel
             }
         }
 
-        // ========== ЭКСПОРТ ОТЧЁТА ПО ПРОДАЖАМ ==========
         private void ExportSalesReportPdf(object parameter)
         {
             var dialog = new SaveFileDialog { Filter = "PDF files (*.pdf)|*.pdf", FileName = $"Отчет_по_продажам_{DateTime.Now:yyyyMMddHHmmss}.pdf" };
             if (dialog.ShowDialog() != true) return;
             CreateSalesReportPdf(dialog.FileName);
             OpenFile(dialog.FileName);
-        }
-
-        private void CreateSalesReportPdf(string filename)
-        {
-            using (var document = new PdfDocument())
-            {
-                document.Info.Title = $"Отчет по продажам за {StartDate:dd.MM.yyyy} - {EndDate:dd.MM.yyyy}";
-                var page = document.AddPage();
-                page.Width = XUnit.FromPoint(595);
-                page.Height = XUnit.FromPoint(842);
-                var gfx = XGraphics.FromPdfPage(page);
-                var fontTitle = new XFont("Arial", 14, XFontStyleEx.Bold);
-                var fontHeader = new XFont("Arial", 10, XFontStyleEx.Bold);
-                var fontNormal = new XFont("Arial", 9, XFontStyleEx.Regular);
-                double y = 30, left = 40;
-
-                gfx.DrawString("ОТЧЕТ ПО ПРОДАЖАМ", fontTitle, XBrushes.DarkBlue, left, y);
-                y += 20;
-                gfx.DrawString($"Период: {StartDate:dd.MM.yyyy} - {EndDate:dd.MM.yyyy}", fontNormal, XBrushes.Black, left, y);
-                y += 20;
-                gfx.DrawString($"Дата формирования: {DateTime.Now:dd.MM.yyyy HH:mm}", fontNormal, XBrushes.Black, left, y);
-                y += 25;
-
-                if (SalesSummary != null && SalesSummary.Any())
-                {
-                    gfx.DrawString("СВОДКА ПО СОТРУДНИКАМ", fontHeader, XBrushes.DarkBlue, left, y);
-                    y += 20;
-                    gfx.DrawString("Сотрудник", fontHeader, XBrushes.Black, left, y);
-                    gfx.DrawString("Продаж", fontHeader, XBrushes.Black, left + 200, y);
-                    gfx.DrawString("Сумма", fontHeader, XBrushes.Black, left + 280, y);
-                    gfx.DrawString("Ср. чек", fontHeader, XBrushes.Black, left + 360, y);
-                    y += 15;
-                    foreach (var item in SalesSummary)
-                    {
-                        gfx.DrawString(item.EmployeeName, fontNormal, XBrushes.Black, left, y);
-                        gfx.DrawString(item.SalesCount.ToString(), fontNormal, XBrushes.Black, left + 200, y);
-                        gfx.DrawString($"{item.TotalAmount:F2} ₽", fontNormal, XBrushes.Black, left + 280, y);
-                        gfx.DrawString($"{item.AverageCheck:F2} ₽", fontNormal, XBrushes.Black, left + 360, y);
-                        y += 15;
-                    }
-                    y += 10;
-                }
-
-                gfx.DrawString("ДЕТАЛИ ПРОДАЖ", fontHeader, XBrushes.DarkBlue, left, y);
-                y += 20;
-                gfx.DrawString("№", fontHeader, XBrushes.Black, left, y);
-                gfx.DrawString("Дата", fontHeader, XBrushes.Black, left + 40, y);
-                gfx.DrawString("Сотрудник", fontHeader, XBrushes.Black, left + 120, y);
-                gfx.DrawString("Сумма", fontHeader, XBrushes.Black, left + 350, y);
-                y += 15;
-
-                foreach (var sale in SalesReport.Take(50))
-                {
-                    if (y > page.Height.Point - 40)
-                    {
-                        page = document.AddPage();
-                        gfx.Dispose();
-                        gfx = XGraphics.FromPdfPage(page);
-                        y = 30;
-                    }
-                    gfx.DrawString(sale.SaleId.ToString(), fontNormal, XBrushes.Black, left, y);
-                    gfx.DrawString(sale.SaleDate.ToString("dd.MM.yy HH:mm"), fontNormal, XBrushes.Black, left + 40, y);
-                    gfx.DrawString(sale.EmployeeName, fontNormal, XBrushes.Black, left + 120, y);
-                    gfx.DrawString($"{sale.TotalAmount:F2} ₽", fontNormal, XBrushes.Black, left + 350, y);
-                    y += 15;
-                }
-                gfx.DrawString($"ОБЩИЙ ИТОГ: {SalesReport.Sum(s => s.TotalAmount):F2} ₽", fontNormal, XBrushes.Black, left, y + 10);
-                gfx.Dispose();
-                document.Save(filename);
-            }
         }
 
         private void ExportSalesReportCsv(object parameter)
@@ -643,7 +884,9 @@ namespace DiplomMurtazin.ViewModel
             CreateReturnReportPdf(dialog.FileName);
             OpenFile(dialog.FileName);
         }
-
+        public ICommand ExportProductCatalogPdfCommand { get; }
+        public ICommand ExportProductCatalogCsvCommand { get; }
+        public ICommand ExportProductCatalogExcelCommand { get; }
         private void CreateReturnReportPdf(string filename)
         {
             using (var document = new PdfDocument())

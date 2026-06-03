@@ -512,7 +512,22 @@ namespace DiplomMurtazin.ViewModel
 
                     foreach (var item in torg12Items)
                         context.Torg12Items.Remove(item);
+                    var priceHistory = context.ProductPriceHistory
+    .Where(ph => ph.ProductID == SelectedProduct.ProductID)
+    .ToList();
 
+                    foreach (var item in priceHistory)
+                    {
+                        context.ProductPriceHistory.Remove(item);
+                    }
+                    var defectiveProducts = context.DefectiveProducts
+    .Where(d => d.ProductID == SelectedProduct.ProductID)
+    .ToList();
+
+                    foreach (var item in defectiveProducts)
+                    {
+                        context.DefectiveProducts.Remove(item);
+                    }
                     var inventoryItems = context.InventoryDetails
                         .Where(x => x.ProductID == productId)
                         .ToList();
