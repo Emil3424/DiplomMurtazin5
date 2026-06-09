@@ -22,7 +22,28 @@ namespace DiplomMurtazin.ViewModel
         private BitmapImage _photoPreview;
         private string _tempPhotoPath;
         private readonly bool _isEditMode;
+        private string _userLogin;
+        private string _userPassword;
+        private string _confirmPassword;
+        private Users _existingUser; // ссылка на существующего пользователя
 
+        public string UserLogin
+        {
+            get => _userLogin;
+            set => Set(ref _userLogin, value);
+        }
+
+        public string UserPassword
+        {
+            get => _userPassword;
+            set => Set(ref _userPassword, value);
+        }
+
+        public string ConfirmPassword
+        {
+            get => _confirmPassword;
+            set => Set(ref _confirmPassword, value);
+        }
         public Employees Employee
         {
             get => _employee;
@@ -124,7 +145,12 @@ namespace DiplomMurtazin.ViewModel
                     }
                 }
             }
-
+            if (employee != null && employee.User != null)
+            {
+                _existingUser = employee.User;
+                UserLogin = _existingUser.Login;
+                // пароль не загружаем (пусто), пользователь введет новый или оставит
+            }
             // Устанавливаем выбранную должность
             if (Employee.PositionID > 0 && Positions != null)
             {
@@ -136,7 +162,20 @@ namespace DiplomMurtazin.ViewModel
             SelectPhotoCommand = new RelayCommand(SelectPhoto);
             ClearPhotoCommand = new RelayCommand(ClearPhoto);
         }
+        private bool CanSave(object parameter)
+        {
+            // Базовые проверки (ФИО, должность)
+            bool basicValid = !string.IsNullOrWhiteSpace(Employee.LastName) &&
+                              !string.IsNullOrWhiteSpace(Employee.FirstName) &&
+                              Employee.PositionID > 0;
 
+            // Если это новый сотрудник, то логин и пароль обязательны
+            if (_isNewEmployee)
+                return basicValid && !string.IsNullOrWhiteSpace(UserLogin) && !string.IsNullOrWhiteSpace(UserPassword);
+
+            // Для существующего – можно менять только если ввели логин/пароль
+            return basicValid;
+        }
         private void LoadPositions()
         {
             try
@@ -153,14 +192,6 @@ namespace DiplomMurtazin.ViewModel
                 ErrorMessage = $"Ошибка загрузки должностей: {ex.Message}";
             }
         }
-
-        private bool CanSave(object parameter)
-        {
-            return !string.IsNullOrWhiteSpace(Employee.LastName) &&
-                   !string.IsNullOrWhiteSpace(Employee.FirstName) &&
-                   Employee.PositionID > 0;
-        }
-
         private void Save(object param)
         {
             // Валидация
@@ -176,17 +207,32 @@ namespace DiplomMurtazin.ViewModel
                 return;
             }
 
-            if (Employee.PositionID == 0 && SelectedPosition != null)
-            {
-                Employee.PositionID = SelectedPosition.PositionID;
-            }
-
             if (Employee.PositionID == 0)
             {
                 ErrorMessage = "Выберите должность";
                 return;
             }
+            // Валидация пароля
+            if (!string.IsNullOrWhiteSpace(UserPassword) && UserPassword != ConfirmPassword)
+            {
+                ErrorMessage = "Пароли не совпадают";
+                return;
+            }
 
+            // Если логин указан, проверяем уникальность
+            if (!string.IsNullOrWhiteSpace(UserLogin))
+            {
+                using (var ctx = new KPMurtazinEntities())
+                {
+                    int existingUserId = _existingUser?.UserID ?? 0;
+                    bool loginExists = ctx.Users.Any(u => u.Login == UserLogin && u.UserID != existingUserId);
+                    if (loginExists)
+                    {
+                        ErrorMessage = "Пользователь с таким логином уже существует";
+                        return;
+                    }
+                }
+            }
             // Сохраняем фото в базу данных
             if (!string.IsNullOrEmpty(_tempPhotoPath) && File.Exists(_tempPhotoPath))
             {
@@ -202,7 +248,45 @@ namespace DiplomMurtazin.ViewModel
                 }
             }
 
-            (param as Window).DialogResult = true;
+            if (_isNewEmployee)
+            {
+                // Для нового сотрудника создаем пользователя обязательно
+                var newUser = new Users
+                {
+                    Login = UserLogin,
+                    Password = UserPassword,
+                    Role = "Кассир",        // роль по умолчанию
+                    IsActive = true,
+                    EmployeeID = Employee.EmployeeID // временно 0, после сохранения сотрудника
+                };
+                Employee.Users.Add(newUser);
+            }
+            else
+            {
+                // Для существующего сотрудника: если есть _existingUser и логин изменился или введен новый пароль
+                if (_existingUser != null)
+                {
+                    if (!string.IsNullOrWhiteSpace(UserLogin))
+                        _existingUser.Login = UserLogin;
+                    if (!string.IsNullOrWhiteSpace(UserPassword))
+                        _existingUser.Password = UserPassword;
+                }
+                else if (!string.IsNullOrWhiteSpace(UserLogin))
+                {
+                    // Создаем нового пользователя для существующего сотрудника
+                    var newUser = new Users
+                    {
+                        Login = UserLogin,
+                        Password = UserPassword,
+                        Role = "Кассир",
+                        IsActive = true,
+                        EmployeeID = Employee.EmployeeID
+                    };
+                    Employee.Users.Add(newUser);
+                }
+            }
+
+        (param as Window).DialogResult = true;
         }
 
         private void Cancel(object param)

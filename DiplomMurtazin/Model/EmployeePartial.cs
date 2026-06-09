@@ -1,6 +1,7 @@
 ﻿using System;
 using System.ComponentModel;
 using System.IO;
+using System.Linq;
 using System.Windows.Media.Imaging;
 
 namespace DiplomMurtazin
@@ -8,7 +9,18 @@ namespace DiplomMurtazin
     public partial class Employees : INotifyPropertyChanged
     {
         private BitmapImage _photo;
-
+        public bool HasPhoto => Photo != null;
+        public string UserLogin
+        {
+            get => Users?.FirstOrDefault()?.Login;
+            set {}
+        }
+        public Users User => Users?.FirstOrDefault();
+        public string UserPassword
+        {
+            get => Users?.FirstOrDefault()?.Password;
+            set {}
+        }
         public string FullName
         {
             get

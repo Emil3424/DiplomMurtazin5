@@ -1,6 +1,7 @@
 using DiplomMurtazin.Core;
 using DiplomMurtazin.Model;
 using DiplomMurtazin.View;
+using Microsoft.Office.Interop.Excel;
 using System;
 using System.Collections.Generic;
 using System.Collections.ObjectModel;
@@ -329,6 +330,31 @@ SELECT CAST(SCOPE_IDENTITY() AS INT);",
                     }
 
                     context.SaveChanges();
+                    
+                        var receipt = new ReceiptModel
+                        {
+                            SaleNumber = SelectedUnit.SaleID,
+                            ShiftNumber = 1,
+                            Cashier = App.CurrentUser?.Login ?? "АДМИНИСТРАТОР",
+                            DateTime = DateTime.Now,
+                            TotalAmount = -refund,  // отрицательная сумма
+                            AmountWithoutVat = -refund,
+                            CashPayment = -refund,
+                            FdNumber = new Random().Next(100000, 999999),
+                            Fp = new Random().Next(100000000, 999999999).ToString(),
+                            DocumentNumber = new Random().Next(1, 9999),
+                            CompanyName = "ВОЗВРАТ ТОВАРА"
+                        };
+                        receipt.Items.Add(new ReceiptItem
+                        {
+                            Name = SelectedUnit.ProductName,
+                            Price = SelectedUnit.UnitPrice,
+                            Quantity = -1   // отрицательное количество
+                        });
+
+                        var receiptWindow = new ReceiptWindow(receipt);
+                        receiptWindow.Owner = System.Windows.Application.Current.Windows.OfType<System.Windows.Window>().FirstOrDefault(w => w is MainWindow);
+                        receiptWindow.ShowDialog();
                 }
 
                 SetStatus(

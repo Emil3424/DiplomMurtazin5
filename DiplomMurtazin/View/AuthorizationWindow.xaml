@@ -97,6 +97,7 @@
                 Content="Войти"
                 Height="45"
                 FontSize="18"
+                IsDefault="True"
                 Margin="0,20,0,10"
                 Click="LoginButton_Click"/>
 
@@ -109,9 +110,6 @@
                     Orientation="Horizontal" 
                     HorizontalAlignment="Center"
                     VerticalAlignment="Center">
-            <TextBlock Text="Нет аккаунта? " 
-                       FontSize="14"
-                       Foreground="#666666"/>
             <TextBlock Text="Зарегистрироваться"
                        FontSize="14"
                        Foreground="#3498db"

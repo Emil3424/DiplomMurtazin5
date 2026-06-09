@@ -7,6 +7,8 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "DiplomMurtazin", "DiplomMur
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "TestKP", "TestKP\TestKP.csproj", "{2D8832FE-F0CD-4D72-99E9-E3381264E139}"
 EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "DiplomMurtazin.Benchmarks", "DiplomMurtazin.Benchmarks\DiplomMurtazin.Benchmarks.csproj", "{8352B3C1-A5E5-4BE6-918A-C69EE8B1E183}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -21,6 +23,10 @@ Global
 		{2D8832FE-F0CD-4D72-99E9-E3381264E139}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{2D8832FE-F0CD-4D72-99E9-E3381264E139}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{2D8832FE-F0CD-4D72-99E9-E3381264E139}.Release|Any CPU.Build.0 = Release|Any CPU
+		{8352B3C1-A5E5-4BE6-918A-C69EE8B1E183}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{8352B3C1-A5E5-4BE6-918A-C69EE8B1E183}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{8352B3C1-A5E5-4BE6-918A-C69EE8B1E183}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{8352B3C1-A5E5-4BE6-918A-C69EE8B1E183}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE

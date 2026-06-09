@@ -23,7 +23,21 @@ namespace DiplomMurtazin.ViewModel
         private string _statusMessage;
         private string _statusColor;
         private int _totalCount;
+        private string _userLogin;
+        private string _userPassword;
+        private string _confirmPassword;
+        private Users _existingUser;
+        public string UserLogin
+        {
+            get => _userLogin;
+            set => Set(ref _userLogin, value);
+        }
 
+        public string UserPassword
+        {
+            get => _userPassword;
+            set => Set(ref _userPassword, value);
+        }
         public ObservableCollection<Employees> FilteredEmployees
         {
             get => _filteredEmployees;
@@ -139,19 +153,19 @@ namespace DiplomMurtazin.ViewModel
             try
             {
                 _context = new KPMurtazinEntities();
+                _context.Configuration.ProxyCreationEnabled = false;
+                _context.Configuration.LazyLoadingEnabled = false;
 
-                _allEmployees = new ObservableCollection<Employees>(
-                    _context.Employees.Include(e => e.Positions).ToList()
-                );
+                var employeesWithAccount = _context.Employees
+                    .Include(e => e.Positions)
+                    .Include(e => e.Users)
+                    .Where(e => e.Users.Any(u => u.Login != null && u.Login != "" && u.Password != null && u.Password != ""))
+                    .ToList();
 
+                _allEmployees = new ObservableCollection<Employees>(employeesWithAccount);
                 _totalCount = _allEmployees.Count;
 
-                // Устанавливаем сортировку по умолчанию (А-Я)
-                _selectedSortOption = SortOptions.FirstOrDefault(s => s.Name == "Фамилия (А-Я)");
-                OnPropertyChanged(nameof(SelectedSortOption));
-
                 ApplyFilters();
-
                 SetStatus("Готов к работе", false);
             }
             catch (Exception ex)
@@ -197,7 +211,7 @@ namespace DiplomMurtazin.ViewModel
             {
                 var query = _allEmployees.AsEnumerable();
 
-                // Фильтр по поиску
+                // В методе ApplyFilters()
                 if (!string.IsNullOrWhiteSpace(SearchText))
                 {
                     string search = SearchText.ToLower();
@@ -206,7 +220,8 @@ namespace DiplomMurtazin.ViewModel
                         e.FirstName.ToLower().Contains(search) ||
                         (e.MiddleName != null && e.MiddleName.ToLower().Contains(search)) ||
                         (e.Email != null && e.Email.ToLower().Contains(search)) ||
-                        (e.Phone != null && e.Phone.Contains(search))
+                        (e.Phone != null && e.Phone.Contains(search)) ||
+                        (e.UserLogin != null && e.UserLogin.ToLower().Contains(search))   // поиск по логину
                     );
                 }
 
@@ -226,11 +241,13 @@ namespace DiplomMurtazin.ViewModel
                                 ? query.OrderBy(e => e.LastName)
                                 : query.OrderByDescending(e => e.LastName);
                             break;
+
                         case "HireDate":
                             query = SelectedSortOption.IsAscending
                                 ? query.OrderBy(e => e.HireDate)
                                 : query.OrderByDescending(e => e.HireDate);
                             break;
+
                         case "Position":
                             query = SelectedSortOption.IsAscending
                                 ? query.OrderBy(e => e.Positions?.PositionName ?? "")
@@ -274,70 +291,81 @@ namespace DiplomMurtazin.ViewModel
 
         private void AddEmployee(object parameter)
         {
-            try
-            {
-                var editWindow = new EmployeeEditWindow();
-                editWindow.Owner = Application.Current.Windows.OfType<Window>().FirstOrDefault(w => w is MainWindow);
+            var editWindow = new EmployeeEditWindow();
+            editWindow.Owner = Application.Current.Windows.OfType<Window>().FirstOrDefault(w => w is MainWindow);
 
-                if (editWindow.ShowDialog() == true)
+            if (editWindow.ShowDialog() == true)
+            {
+                using (var context = new KPMurtazinEntities())
                 {
-                    using (var context = new KPMurtazinEntities())
+                    var newEmployee = editWindow.GetEmployee();
+                    context.Employees.Add(newEmployee);
+                    context.SaveChanges(); // теперь EmployeeID сгенерирован
+
+                    // Создаем пользователя, если указан логин
+                    if (!string.IsNullOrWhiteSpace(editWindow.UserLogin))
                     {
-                        var newEmployee = editWindow.GetEmployee();
-                        context.Employees.Add(newEmployee);
+                        var newUser = new Users
+                        {
+                            Login = editWindow.UserLogin,
+                            Password = editWindow.UserPassword,
+                            Role = "Кассир",
+                            IsActive = true,
+                            EmployeeID = newEmployee.EmployeeID
+                        };
+                        context.Users.Add(newUser);
                         context.SaveChanges();
-                        AuditLogger.Log("CREATE", "Employee", $"Добавлен сотрудник {newEmployee.FullName}", newEmployee.EmployeeID.ToString());
-
-                        RefreshData(null);
-                        SetStatus("Сотрудник добавлен", false);
                     }
+
+                    AuditLogger.Log("CREATE", "Employee", $"Добавлен сотрудник {newEmployee.FullName}", newEmployee.EmployeeID.ToString());
+                    RefreshData(null);
+                    SetStatus("Сотрудник добавлен", false);
                 }
-                else
-                {
-                    SetStatus("Добавление сотрудника отменено", false);
-                }
-            }
-            catch (Exception ex)
-            {
-                SetStatus($"Ошибка: {ex.Message}", true);
             }
         }
 
         private void EditEmployee(object parameter)
         {
             if (SelectedEmployee == null) return;
-
-            try
+            var editWindow = new EmployeeEditWindow(SelectedEmployee);
+            if (editWindow.ShowDialog() == true)
             {
-                var editWindow = new EmployeeEditWindow(SelectedEmployee);
-                editWindow.Owner = Application.Current.Windows.OfType<Window>().FirstOrDefault(w => w is MainWindow);
-
-                if (editWindow.ShowDialog() == true)
+                using (var context = new KPMurtazinEntities())
                 {
-                    using (var context = new KPMurtazinEntities())
+                    var editedEmployee = editWindow.GetEmployee();
+                    var dbEmployee = context.Employees.Find(editedEmployee.EmployeeID);
+                    if (dbEmployee != null)
                     {
-                        var editedEmployee = editWindow.GetEmployee();
-                        var dbEmployee = context.Employees.Find(editedEmployee.EmployeeID);
+                        context.Entry(dbEmployee).CurrentValues.SetValues(editedEmployee);
 
-                        if (dbEmployee != null)
+                        // Обновляем пользователя
+                        var user = context.Users.FirstOrDefault(u => u.EmployeeID == dbEmployee.EmployeeID);
+                        if (user != null)
                         {
-                            context.Entry(dbEmployee).CurrentValues.SetValues(editedEmployee);
-                            context.SaveChanges();
-                            AuditLogger.Log("UPDATE", "Employee", $"Обновлен сотрудник {dbEmployee.FullName}", dbEmployee.EmployeeID.ToString());
-
-                            RefreshData(null);
-                            SetStatus("Сотрудник обновлен", false);
+                            if (!string.IsNullOrWhiteSpace(editWindow.UserLogin))
+                                user.Login = editWindow.UserLogin;
+                            if (!string.IsNullOrWhiteSpace(editWindow.UserPassword))
+                                user.Password = editWindow.UserPassword;
                         }
+                        else if (!string.IsNullOrWhiteSpace(editWindow.UserLogin))
+                        {
+                            var newUser = new Users
+                            {
+                                Login = editWindow.UserLogin,
+                                Password = editWindow.UserPassword,
+                                Role = "Кассир",
+                                IsActive = true,
+                                EmployeeID = dbEmployee.EmployeeID
+                            };
+                            context.Users.Add(newUser);
+                        }
+
+                        context.SaveChanges();
+                        AuditLogger.Log("UPDATE", "Employee", $"Обновлен сотрудник {dbEmployee.FullName}", dbEmployee.EmployeeID.ToString());
+                        RefreshData(null);
+                        SetStatus("Сотрудник обновлен", false);
                     }
                 }
-                else
-                {
-                    SetStatus("Редактирование сотрудника отменено", false);
-                }
-            }
-            catch (Exception ex)
-            {
-                SetStatus($"Ошибка: {ex.Message}", true);
             }
         }
 

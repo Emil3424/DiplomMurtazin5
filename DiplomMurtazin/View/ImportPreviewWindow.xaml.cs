@@ -12,6 +12,11 @@ namespace DiplomMurtazin.View
         public ObservableCollection<ImportPreviewRow> PreviewRows { get; set; }
         public bool ImportConfirmed { get; private set; }
 
+        // Добавьте эти три свойства
+        public string DocumentNumber => Data?.DocumentNumber;
+        public DateTime DocumentDate => Data?.DocumentDate ?? DateTime.Today;
+        public string ReceiverName => Data?.ReceiverName;
+
         public ImportPreviewWindow(ImportPreviewData data)
         {
             InitializeComponent();

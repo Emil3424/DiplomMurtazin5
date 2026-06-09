@@ -9,7 +9,8 @@ namespace DiplomMurtazin.View
     public partial class EmployeeEditWindow : Window
     {
         private EmployeeEditViewModel _viewModel;
-
+        public string UserLogin => _viewModel?.UserLogin;
+        public string UserPassword => _viewModel?.UserPassword;
         public EmployeeEditWindow() : this(null) { }
 
         public EmployeeEditWindow(Employees employee = null)

@@ -50,7 +50,12 @@ namespace DiplomMurtazin.Core
                 {
                     DocumentDate = DateTime.Today
                 };
-
+                result.DocumentNumber = GetCellString(ws, 26, 50);
+                result.DocumentDate = GetCellDate(ws, 26, 63) ?? DateTime.Today;
+                result.ReceiverName = GetCellString(ws, 12, 12);
+                result.ReceiverAddress = GetCellString(ws, 13, 12); // предположительно адрес в 13 строке, либо парсить из 12
+                result.Basis = GetCellString(ws, 18, 9);
+                
                 int row = 31;
 
                 while (true)
@@ -95,7 +100,27 @@ namespace DiplomMurtazin.Core
                 Release(excel);
             }
         }
+        private static string GetCellString(Excel.Worksheet ws, int row, int col)
+        {
+            var value = ((Excel.Range)ws.Cells[row, col]).Value2;
+            return value?.ToString()?.Trim();
+        }
 
+        private static DateTime? GetCellDate(Excel.Worksheet ws, int row, int col)
+        {
+            try
+            {
+                var value = ((Excel.Range)ws.Cells[row, col]).Value2;
+                if (value is double dateOa)
+                    return DateTime.FromOADate(dateOa);
+
+                string str = value?.ToString();
+                if (!string.IsNullOrEmpty(str) && DateTime.TryParse(str, out DateTime dt))
+                    return dt;
+            }
+            catch { }
+            return null;
+        }
 
         private static object GetCell(object sheet, int r, int c)
         {

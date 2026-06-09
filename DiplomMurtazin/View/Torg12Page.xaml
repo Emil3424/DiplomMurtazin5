@@ -199,15 +199,8 @@
                 <StackPanel Grid.Row="7" Orientation="Vertical" HorizontalAlignment="Center" Margin="0,0,0,10">
                     <StackPanel Orientation="Horizontal" Margin="0,0,0,5">
 
-                        <Button Content="Сохранить черновик"
-                            Width="175"
-                            Height="36"
-                            Margin="0,0,8,0"
-                            Command="{Binding SaveDraftCommand}"
-                            Background="#3498db"
-                            Foreground="White"/>
                         <Button Content="Экспорт ТОРГ-12"
-                                Width="175"
+                                Width="358"
                             Height="36"
                             Margin="0,0,8,0"
                             Command="{Binding ExportTorg12Command}"

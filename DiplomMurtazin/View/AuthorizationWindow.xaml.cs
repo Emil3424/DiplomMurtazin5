@@ -72,9 +72,16 @@ namespace DiplomMurtazin.View
 
         private void RegistrationLink_MouseLeftButtonDown(object sender, System.Windows.Input.MouseButtonEventArgs e)
         {
-            var registrationWindow = new RegistrationWindow();
-            registrationWindow.Owner = this;
-            registrationWindow.ShowDialog();
+            // 1. Сначала аутентификация администратора
+            var adminAuthWindow = new AdminAuthWindow();
+            adminAuthWindow.Owner = this;
+            if (adminAuthWindow.ShowDialog() == true)
+            {
+                // 2. Если успешно – открываем окно регистрации
+                var registrationWindow = new RegistrationWindow();
+                registrationWindow.Owner = this;
+                registrationWindow.ShowDialog();
+            }
         }
 
         private void ShowError(string message)
