@@ -1,0 +1,963 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<ClassDiagram MajorVersion="1" MinorVersion="1">
+  <Class Name="DiplomMurtazin.App" Collapsed="true">
+    <Position X="67.75" Y="0.5" Width="1.5" />
+    <TypeIdentifier>
+      <HashCode>IAAAAAAAAIAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA=</HashCode>
+      <FileName>App.xaml.cs</FileName>
+    </TypeIdentifier>
+  </Class>
+  <Class Name="DiplomMurtazin.Employees" Collapsed="true" BaseTypeListCollapsed="true">
+    <Position X="78.25" Y="1.5" Width="1.5" />
+    <TypeIdentifier>
+      <HashCode>EAMBAGAAACBACKwgMAAQBAAAgCAIAABCgIFAICIQAAg=</HashCode>
+      <FileName>Model\EmployeePartial.cs</FileName>
+    </TypeIdentifier>
+    <Lollipop Position="0.2" Collapsed="true" />
+  </Class>
+  <Class Name="DiplomMurtazin.UserViews" Collapsed="true">
+    <Position X="81.75" Y="8.5" Width="1.5" />
+    <TypeIdentifier>
+      <HashCode>AAACIAAAAAAAIAAAAAAAAAQAAAAAAAAAAgAAAQAAAAA=</HashCode>
+      <FileName>Model\UserViewsPartial.cs</FileName>
+    </TypeIdentifier>
+  </Class>
+  <Class Name="DiplomMurtazin.KPMurtazinEntities" Collapsed="true">
+    <Position X="67.75" Y="3.5" Width="1.5" />
+    <TypeIdentifier>
+      <HashCode>AABQAGAACCACCIhgAACABAAAPAAAUAAAEIFACCAAEAQ=</HashCode>
+      <FileName>Model1.Context.cs</FileName>
+    </TypeIdentifier>
+  </Class>
+  <Class Name="DiplomMurtazin.AuditLog" Collapsed="true">
+    <Position X="71.25" Y="0.5" Width="1.5" />
+    <TypeIdentifier>
+      <HashCode>EAIAAAAAAAABAAAAiAAAAAAASAAAEAAAAAAAAABEAAA=</HashCode>
+      <FileName>AuditLog.cs</FileName>
+    </TypeIdentifier>
+  </Class>
+  <Class Name="DiplomMurtazin.Categories" Collapsed="true">
+    <Position X="80" Y="0.5" Width="1.5" />
+    <TypeIdentifier>
+      <HashCode>AAAAAAACAAAAAAAAAAAABAAAACAAAgAAAACAAAAAAAQ=</HashCode>
+      <FileName>Categories.cs</FileName>
+    </TypeIdentifier>
+  </Class>
+  <Class Name="DiplomMurtazin.DefectiveProducts" Collapsed="true">
+    <Position X="73" Y="1.5" Width="1.5" />
+    <TypeIdentifier>
+      <HashCode>FAIgAAAEAAAAAAICAAAABAAAAAAAAAAAAAAAgAAAEAQ=</HashCode>
+      <FileName>DefectiveProducts.cs</FileName>
+    </TypeIdentifier>
+  </Class>
+  <Class Name="DiplomMurtazin.InventoryActs" Collapsed="true">
+    <Position X="78.25" Y="2.5" Width="1.5" />
+    <TypeIdentifier>
+      <HashCode>AAAAAAAGAAAgAAAAAAiAACAADAAAAAAAAAAAAAAAEAA=</HashCode>
+      <FileName>InventoryActs.cs</FileName>
+    </TypeIdentifier>
+  </Class>
+  <Class Name="DiplomMurtazin.InventoryDetails" Collapsed="true">
+    <Position X="80" Y="2.5" Width="1.5" />
+    <TypeIdentifier>
+      <HashCode>EAAgAAACAAAAAAAAAAgAAAAABAAAQAAAAIEAAAAAEAw=</HashCode>
+      <FileName>InventoryDetails.cs</FileName>
+    </TypeIdentifier>
+  </Class>
+  <Class Name="DiplomMurtazin.InvoiceItems" Collapsed="true">
+    <Position X="83.5" Y="2.5" Width="1.5" />
+    <TypeIdentifier>
+      <HashCode>MAEAKAAAAAAAAQAAAAAAAAAAAAAAQAAAAAAAACAAAAQ=</HashCode>
+      <FileName>InvoiceItems.cs</FileName>
+    </TypeIdentifier>
+  </Class>
+  <Class Name="DiplomMurtazin.Invoices" Collapsed="true">
+    <Position X="66" Y="3.5" Width="1.5" />
+    <TypeIdentifier>
+      <HashCode>AAAgIAAEAAACAIgAAgACAAAACAAAAACBAiAAAAAQAAE=</HashCode>
+      <FileName>Invoices.cs</FileName>
+    </TypeIdentifier>
+  </Class>
+  <Class Name="DiplomMurtazin.Positions" Collapsed="true">
+    <Position X="80" Y="3.5" Width="1.5" />
+    <TypeIdentifier>
+      <HashCode>AAAAAAAAAAAAAAAAAAAAAAAACAgAAgAAgAAAIAAAAAA=</HashCode>
+      <FileName>Positions.cs</FileName>
+    </TypeIdentifier>
+  </Class>
+  <Class Name="DiplomMurtazin.ProductMovementHistory" Collapsed="true">
+    <Position X="71.25" Y="4.5" Width="1.5" />
+    <TypeIdentifier>
+      <HashCode>EAIADAACAAAAAAAAAAIAAAAACAAAAAAAACAAgAAAEAQ=</HashCode>
+      <FileName>ProductMovementHistory.cs</FileName>
+    </TypeIdentifier>
+  </Class>
+  <Class Name="DiplomMurtazin.ProductPriceHistory" Collapsed="true">
+    <Position X="73" Y="4.5" Width="1.5" />
+    <TypeIdentifier>
+      <HashCode>EAAAAAAAAgAAgAAAAAAAAAAAAAAAGAAAAAACAAAAACQ=</HashCode>
+      <FileName>ProductPriceHistory.cs</FileName>
+    </TypeIdentifier>
+  </Class>
+  <Class Name="DiplomMurtazin.ProductReturns" Collapsed="true">
+    <Position X="74.75" Y="4.5" Width="1.5" />
+    <TypeIdentifier>
+      <HashCode>FAAAAAAAAAwAAABAAAIAAgAAAAAAAAAAAAAECABAEAQ=</HashCode>
+      <FileName>ProductReturns.cs</FileName>
+    </TypeIdentifier>
+  </Class>
+  <Class Name="DiplomMurtazin.Products" Collapsed="true">
+    <Position X="78.25" Y="4.5" Width="1.5" />
+    <TypeIdentifier>
+      <HashCode>MghQAAACCCEiACRAAADAAIAAhAAAUAAAEIgACAAJAAA=</HashCode>
+      <FileName>Products.cs</FileName>
+    </TypeIdentifier>
+  </Class>
+  <Class Name="DiplomMurtazin.ProductUnits" Collapsed="true">
+    <Position X="66" Y="5.5" Width="1.5" />
+    <TypeIdentifier>
+      <HashCode>EABAAAAECAAAAAAACCAABAEAgAEAAAAAAACMAABAEAQ=</HashCode>
+      <FileName>ProductUnits.cs</FileName>
+    </TypeIdentifier>
+  </Class>
+  <Class Name="DiplomMurtazin.Salaries" Collapsed="true">
+    <Position X="67.75" Y="6.5" Width="1.5" />
+    <TypeIdentifier>
+      <HashCode>AAOAAAAAAAEQAAAAAAIAAAAACgAAAQAAAAEAAAAAAEA=</HashCode>
+      <FileName>Salaries.cs</FileName>
+    </TypeIdentifier>
+  </Class>
+  <Class Name="DiplomMurtazin.SaleItems" Collapsed="true">
+    <Position X="69.5" Y="6.5" Width="1.5" />
+    <TypeIdentifier>
+      <HashCode>MAAAAAAAAAAAAAAAAAAABAIAAAAAQAAAAAAAiABAEAQ=</HashCode>
+      <FileName>SaleItems.cs</FileName>
+    </TypeIdentifier>
+  </Class>
+  <Class Name="DiplomMurtazin.Sales" Collapsed="true">
+    <Position X="71.25" Y="6.5" Width="1.5" />
+    <TypeIdentifier>
+      <HashCode>AAJBAAAAAAAQAAgAAAACAAAACAAARAAAAAAAKAAAUAA=</HashCode>
+      <FileName>Sales.cs</FileName>
+    </TypeIdentifier>
+  </Class>
+  <Class Name="DiplomMurtazin.Shifts" Collapsed="true">
+    <Position X="81.75" Y="6.5" Width="1.5" />
+    <TypeIdentifier>
+      <HashCode>AAIgQAAAAAAAAAAAAIACBAAACAAAAAAAAQAAACAAQAE=</HashCode>
+      <FileName>Shifts.cs</FileName>
+    </TypeIdentifier>
+  </Class>
+  <Class Name="DiplomMurtazin.StockBalances" Collapsed="true">
+    <Position X="67.75" Y="7.5" Width="1.5" />
+    <TypeIdentifier>
+      <HashCode>EAAAAAACAAAAAAAAAAAAAAEAAAAAAAAAAAAAgAAAGAQ=</HashCode>
+      <FileName>StockBalances.cs</FileName>
+    </TypeIdentifier>
+  </Class>
+  <Class Name="DiplomMurtazin.Suppliers" Collapsed="true">
+    <Position X="73" Y="7.5" Width="1.5" />
+    <TypeIdentifier>
+      <HashCode>AAAAAAAAACAAAAAABAAAAAAAAAABAAACAKEAICAAAAA=</HashCode>
+      <FileName>Suppliers.cs</FileName>
+    </TypeIdentifier>
+  </Class>
+  <Class Name="DiplomMurtazin.Torg12Documents" Collapsed="true">
+    <Position X="80" Y="7.5" Width="1.5" />
+    <TypeIdentifier>
+      <HashCode>AAAwACQEAAAAAABQAAAEAEAACIQAAABABggAAAACAAA=</HashCode>
+      <FileName>Torg12Documents.cs</FileName>
+    </TypeIdentifier>
+  </Class>
+  <Class Name="DiplomMurtazin.Torg12ImportMissingItems" Collapsed="true">
+    <Position X="67.75" Y="8.5" Width="1.5" />
+    <TypeIdentifier>
+      <HashCode>ICAAAAAFAAAAAAAAAAAAAEAAAABAAAAAAgBAgAAIAAQ=</HashCode>
+      <FileName>Torg12ImportMissingItems.cs</FileName>
+    </TypeIdentifier>
+  </Class>
+  <Class Name="DiplomMurtazin.Torg12Items" Collapsed="true">
+    <Position X="69.5" Y="8.5" Width="1.5" />
+    <TypeIdentifier>
+      <HashCode>MAABAAAAAAAAAAAAAAAAAEAAAAAAQAAAAABAgAAAAAQ=</HashCode>
+      <FileName>Torg12Items.cs</FileName>
+    </TypeIdentifier>
+  </Class>
+  <Class Name="DiplomMurtazin.Users" Collapsed="true">
+    <Position X="78.25" Y="8.5" Width="1.5" />
+    <TypeIdentifier>
+      <HashCode>AAIAAAAAAAACAAQAEAAAAAgACAAAAAACAABQAAAAAAA=</HashCode>
+      <FileName>Users.cs</FileName>
+    </TypeIdentifier>
+  </Class>
+  <Class Name="DiplomMurtazin.v_PopularProducts" Collapsed="true">
+    <Position X="83.5" Y="8.5" Width="1.5" />
+    <TypeIdentifier>
+      <HashCode>EAAAAAAAAAEAAAAAEAAAAAAAACCAgAAAAAAAAAAIAAA=</HashCode>
+      <FileName>v_PopularProducts.cs</FileName>
+    </TypeIdentifier>
+  </Class>
+  <Class Name="DiplomMurtazin.WarehouseZones" Collapsed="true">
+    <Position X="69.5" Y="9.5" Width="1.5" />
+    <TypeIdentifier>
+      <HashCode>AAAAAAACACAgAAAAAACAAAACBAAAAAAAAAEAABAAAAA=</HashCode>
+      <FileName>WarehouseZones.cs</FileName>
+    </TypeIdentifier>
+  </Class>
+  <Class Name="DiplomMurtazin.Core.AppPaths" Collapsed="true">
+    <Position X="69.5" Y="0.5" Width="1.5" />
+    <TypeIdentifier>
+      <HashCode>ACAAAAAIAAAAAAAAAAAAAAAACQAAAAAQAAAAgAAAABA=</HashCode>
+      <FileName>Core\AddPaths.cs</FileName>
+    </TypeIdentifier>
+  </Class>
+  <Class Name="DiplomMurtazin.Core.AuditLogger" Collapsed="true">
+    <Position X="73" Y="0.5" Width="1.5" />
+    <TypeIdentifier>
+      <HashCode>AAAAAAAAAAAAAAAAAAAAAAAAAAgAAAAAAAAAAAAAAAA=</HashCode>
+      <FileName>Core\AuditLogger.cs</FileName>
+    </TypeIdentifier>
+  </Class>
+  <Class Name="DiplomMurtazin.Core.BooleanToVisibilityConverter" Collapsed="true" BaseTypeListCollapsed="true">
+    <Position X="76.5" Y="0.5" Width="1.5" />
+    <TypeIdentifier>
+      <HashCode>AAAAAAAAAAAAAAAAAIAAAAAAAAgAAAAAAAAAAAAAAAA=</HashCode>
+      <FileName>Core\BooleanToVisibilityConverter.cs</FileName>
+    </TypeIdentifier>
+    <Lollipop Position="0.2" Collapsed="true" />
+  </Class>
+  <Class Name="DiplomMurtazin.Core.ConnectionManager" Collapsed="true">
+    <Position X="81.75" Y="0.5" Width="1.5" />
+    <TypeIdentifier>
+      <HashCode>AAAAEAAAAAAAAgAAAAAAAAAAAEAAABAAAAAQAAIgAAA=</HashCode>
+      <FileName>Core\ConnectionManager.cs</FileName>
+    </TypeIdentifier>
+  </Class>
+  <Class Name="DiplomMurtazin.Core.DatabaseManager" Collapsed="true">
+    <Position X="66" Y="1.5" Width="1.5" />
+    <TypeIdentifier>
+      <HashCode>IAAAAAAAAAAAAAAAQAAAAAAAACAAAAAAAAAgAAABAAA=</HashCode>
+      <FileName>Core\DatabaseManager.cs</FileName>
+    </TypeIdentifier>
+  </Class>
+  <Class Name="DiplomMurtazin.Core.DataRefreshBus" Collapsed="true">
+    <Position X="69.5" Y="1.5" Width="1.5" />
+    <TypeIdentifier>
+      <HashCode>AAAAAAAAAAEAAAAAAAAAAQAAAAAAAAAAAAAAAAAAAAA=</HashCode>
+      <FileName>Core\DataRefreshBus.cs</FileName>
+    </TypeIdentifier>
+  </Class>
+  <Class Name="DiplomMurtazin.Core.DateToStringConverter" Collapsed="true" BaseTypeListCollapsed="true">
+    <Position X="71.25" Y="1.5" Width="1.5" />
+    <TypeIdentifier>
+      <HashCode>AAAAAAAAAAAAAAAAAIAAAAAAAAgAAAAAAAAAAAAAAAA=</HashCode>
+      <FileName>Core\DateToStringConverter.cs</FileName>
+    </TypeIdentifier>
+    <Lollipop Position="0.2" Collapsed="true" />
+  </Class>
+  <Class Name="DiplomMurtazin.Core.ErrorToVisibilityConverter" Collapsed="true" BaseTypeListCollapsed="true">
+    <Position X="81.75" Y="1.5" Width="1.5" />
+    <TypeIdentifier>
+      <HashCode>AAAAAAAAAAAAAAAAAIAAAAAAAAgAAAAAAAAAAAAAAAA=</HashCode>
+      <FileName>Core\ErrorToVisibilityConverter.cs</FileName>
+    </TypeIdentifier>
+    <Lollipop Position="0.2" Collapsed="true" />
+  </Class>
+  <Class Name="DiplomMurtazin.Core.FontResolver" Collapsed="true" BaseTypeListCollapsed="true">
+    <Position X="83.5" Y="1.5" Width="1.5" />
+    <TypeIdentifier>
+      <HashCode>AAAAQAAAAAAAAAAAAAAAAAAAAEgAAAAAACAAAAAAAAA=</HashCode>
+      <FileName>Core\FontResolver.cs</FileName>
+    </TypeIdentifier>
+    <Lollipop Position="0.2" Collapsed="true" />
+  </Class>
+  <Class Name="DiplomMurtazin.Core.InputMask" Collapsed="true">
+    <Position X="76.5" Y="2.5" Width="1.5" />
+    <TypeIdentifier>
+      <HashCode>AAAIAAAACAAAAIAAAAAwEAAAAACCAEAAEARABECAgAI=</HashCode>
+      <FileName>Core\InputMask.cs</FileName>
+    </TypeIdentifier>
+  </Class>
+  <Class Name="DiplomMurtazin.Core.InverseBooleanConverter" Collapsed="true" BaseTypeListCollapsed="true">
+    <Position X="81.75" Y="2.5" Width="1.5" />
+    <TypeIdentifier>
+      <HashCode>AAAAAAAAAAAAAAAAAIAAAAAAAAgAAAAAAAAAAAAAAAA=</HashCode>
+      <FileName>Core\InverseBooleanConverter.cs</FileName>
+    </TypeIdentifier>
+    <Lollipop Position="0.2" Collapsed="true" />
+  </Class>
+  <Class Name="DiplomMurtazin.Core.NullToVisibilityConverter" Collapsed="true" BaseTypeListCollapsed="true">
+    <Position X="76.5" Y="3.5" Width="1.5" />
+    <TypeIdentifier>
+      <HashCode>AAAAAAAAAAAAAAAAAIAAAAAAAAgAAAAAAAAAAAAAAAA=</HashCode>
+      <FileName>Core\NullToVisibilityConverter.cs</FileName>
+    </TypeIdentifier>
+    <Lollipop Position="0.2" Collapsed="true" />
+  </Class>
+  <Class Name="DiplomMurtazin.Core.PhotoMigrationHelper" Collapsed="true">
+    <Position X="78.25" Y="3.5" Width="1.5" />
+    <TypeIdentifier>
+      <HashCode>AAAAAAAAAAAAAAAQAAAAAAAAAAAAAAAAAAAAAAAAAAA=</HashCode>
+      <FileName>Core\PhotoMigrationHelper.cs</FileName>
+    </TypeIdentifier>
+  </Class>
+  <Class Name="DiplomMurtazin.Core.RelayCommand" Collapsed="true" BaseTypeListCollapsed="true">
+    <Position X="74.75" Y="5.5" Width="1.5" />
+    <TypeIdentifier>
+      <HashCode>AAAAAAAAAEACAAQAAECAAAAAAAAAAAAAAAAAAAAAAAA=</HashCode>
+      <FileName>Core\RelayCommand.cs</FileName>
+    </TypeIdentifier>
+    <Lollipop Position="0.2" Collapsed="true" />
+  </Class>
+  <Class Name="DiplomMurtazin.Core.ReturnReasonItem" Collapsed="true">
+    <Position X="50.75" Y="2" Width="1.5" />
+    <TypeIdentifier>
+      <HashCode>AAAAAAAAAAAAEAAAAAAAAASAAAAAAACAAAAAAAAAAAA=</HashCode>
+      <FileName>Core\ReturnReasonItem.cs</FileName>
+    </TypeIdentifier>
+  </Class>
+  <Class Name="DiplomMurtazin.Core.ReturnsWarrantyService" Collapsed="true">
+    <Position X="66" Y="6.5" Width="1.5" />
+    <TypeIdentifier>
+      <HashCode>AAAAAAAAAAAAAAAAAAAACAAAAAAAAAAAAAAAAAAAAAA=</HashCode>
+      <FileName>Core\ReturnsWarrantyService.cs</FileName>
+    </TypeIdentifier>
+  </Class>
+  <Class Name="DiplomMurtazin.Core.SortOption" Collapsed="true">
+    <Position X="83.5" Y="6.5" Width="1.5" />
+    <TypeIdentifier>
+      <HashCode>AAAAAAAAAAAAAAAEACAAAAQAAAAAAAAAAAAgAAAAAAA=</HashCode>
+      <FileName>Core\SortOption.cs</FileName>
+    </TypeIdentifier>
+  </Class>
+  <Class Name="DiplomMurtazin.Core.StatusBackgroundConverter" Collapsed="true" BaseTypeListCollapsed="true">
+    <Position X="66" Y="7.5" Width="1.5" />
+    <TypeIdentifier>
+      <HashCode>AAAAAAAAAAAAAAAAAIAAAAAAAAgAAAAAAAAAAAAAAAA=</HashCode>
+      <FileName>Core\StatusBackgroundConverter.cs</FileName>
+    </TypeIdentifier>
+    <Lollipop Position="0.2" Collapsed="true" />
+  </Class>
+  <Class Name="DiplomMurtazin.Core.StockCountConverter" Collapsed="true" BaseTypeListCollapsed="true">
+    <Position X="69.5" Y="7.5" Width="1.5" />
+    <TypeIdentifier>
+      <HashCode>AAAAAAAAAAAAAAAAAIAAAAAAAAgAAAAAAAAAAAAAAAA=</HashCode>
+      <FileName>Core\StockCountConverter.cs</FileName>
+    </TypeIdentifier>
+    <Lollipop Position="0.2" Collapsed="true" />
+  </Class>
+  <Class Name="DiplomMurtazin.Core.TextToVisibilityConverter" Collapsed="true" BaseTypeListCollapsed="true">
+    <Position X="76.5" Y="7.5" Width="1.5" />
+    <TypeIdentifier>
+      <HashCode>AAAAAAAAAAAAAAAAAIAAAAAAAAgAAAAAAAAAAAAAAAA=</HashCode>
+      <FileName>Core\TextToVisibilityConverter.cs</FileName>
+    </TypeIdentifier>
+    <Lollipop Position="0.2" Collapsed="true" />
+  </Class>
+  <Class Name="DiplomMurtazin.Core.Torg12ExcelData" Collapsed="true">
+    <Position X="81.75" Y="7.5" Width="1.5" />
+    <TypeIdentifier>
+      <HashCode>AAAAAAQAAAAAAEAQAAAEAAAAAIQAAAAAAAAAAAAAAAA=</HashCode>
+      <FileName>Core\Torg12ExcelInteropService.cs</FileName>
+    </TypeIdentifier>
+  </Class>
+  <Class Name="DiplomMurtazin.Core.Torg12ExcelRow" Collapsed="true">
+    <Position X="66" Y="8.5" Width="1.5" />
+    <TypeIdentifier>
+      <HashCode>IAAAAAAAAAEAAAAAAAAAAAAAAAAAAAAAAAAAgAAIAAA=</HashCode>
+      <FileName>Core\Torg12ExcelInteropService.cs</FileName>
+    </TypeIdentifier>
+  </Class>
+  <Class Name="DiplomMurtazin.Core.Torg12ExcelInteropService" Collapsed="true">
+    <Position X="83.5" Y="7.5" Width="1.5" />
+    <TypeIdentifier>
+      <HashCode>QAAIAAIAAAAAAAAAIACAAAAAAAAAAAAAACiAABAAAAA=</HashCode>
+      <FileName>Core\Torg12ExcelInteropService.cs</FileName>
+    </TypeIdentifier>
+  </Class>
+  <Class Name="DiplomMurtazin.Model.DataContext" Collapsed="true">
+    <Position X="67.75" Y="1.5" Width="1.5" />
+    <TypeIdentifier>
+      <HashCode>AAAAAAAAAAAABAAAAAAAAAAAAAAAAAAAACAABAAAAAA=</HashCode>
+      <FileName>Model\DataContext.cs</FileName>
+    </TypeIdentifier>
+  </Class>
+  <Class Name="DiplomMurtazin.Model.Products" Collapsed="true" BaseTypeListCollapsed="true">
+    <Position X="76.5" Y="4.5" Width="1.5" />
+    <TypeIdentifier>
+      <HashCode>AgAAAAAAAAAAAAAAAAAAAIAAgAAAAAAAAAAAAAAAAAA=</HashCode>
+      <FileName>Model\ProductsPartial.cs</FileName>
+    </TypeIdentifier>
+    <Lollipop Position="0.2" Collapsed="true" />
+  </Class>
+  <Class Name="DiplomMurtazin.Model.ReceiptModel" Collapsed="true">
+    <Position X="69.5" Y="5.5" Width="1.5" />
+    <TypeIdentifier>
+      <HashCode>AAAAQACAkAAYiAAAAAAAAAAAAEQAAoQGEEAAAAAQCCA=</HashCode>
+      <FileName>Model\ReceiptModel.cs</FileName>
+    </TypeIdentifier>
+  </Class>
+  <Class Name="DiplomMurtazin.Model.ReceiptItem" Collapsed="true">
+    <Position X="67.75" Y="5.5" Width="1.5" />
+    <TypeIdentifier>
+      <HashCode>AAAAAAAAAQAAAAAAAAAAAAQAAAAAQAAAAAAAgAAAAAA=</HashCode>
+      <FileName>Model\ReceiptModel.cs</FileName>
+    </TypeIdentifier>
+  </Class>
+  <Class Name="DiplomMurtazin.Model.SalesReportItem" Collapsed="true">
+    <Position X="74.75" Y="6.5" Width="1.5" />
+    <TypeIdentifier>
+      <HashCode>AAAJAAAAAAAQAAgAAAAAAAAAAAAAAAAAAAAAAAEAEAA=</HashCode>
+      <FileName>Model\ReportModels.cs</FileName>
+    </TypeIdentifier>
+  </Class>
+  <Class Name="DiplomMurtazin.Model.SalesSummaryItem" Collapsed="true">
+    <Position X="76.5" Y="6.5" Width="1.5" />
+    <TypeIdentifier>
+      <HashCode>AAAJAAAAAAAQAAQAAAAAAAAAAAAAAAAAAAAAAAAAAAA=</HashCode>
+      <FileName>Model\ReportModels.cs</FileName>
+    </TypeIdentifier>
+  </Class>
+  <Class Name="DiplomMurtazin.Model.StockReportItem" Collapsed="true">
+    <Position X="71.25" Y="7.5" Width="1.5" />
+    <TypeIdentifier>
+      <HashCode>MAAAAAAEAAAAAAAAAABAAEAAAAEAAAAAAAAAAAAICAA=</HashCode>
+      <FileName>Model\ReportModels.cs</FileName>
+    </TypeIdentifier>
+  </Class>
+  <Class Name="DiplomMurtazin.Model.ProductCatalogItem" Collapsed="true">
+    <Position X="66" Y="4.5" Width="1.5" />
+    <TypeIdentifier>
+      <HashCode>MAgAAAAAAAEAAAAAAAAAAAAAAAEAAAAAAAgAAAAJCAA=</HashCode>
+      <FileName>Model\ReportModels.cs</FileName>
+    </TypeIdentifier>
+  </Class>
+  <Class Name="DiplomMurtazin.Model.SavedViewInfo" Collapsed="true">
+    <Position X="78.25" Y="6.5" Width="1.5" />
+    <TypeIdentifier>
+      <HashCode>AAACAAAAAAAAAAAAAAAAAAQAAAAAAAAAAAAAAQAAAAA=</HashCode>
+      <FileName>Model\SavedViewInfo.cs</FileName>
+    </TypeIdentifier>
+  </Class>
+  <Class Name="DiplomMurtazin.Model.Users" Collapsed="true">
+    <Position X="80" Y="8.5" Width="1.5" />
+    <TypeIdentifier>
+      <HashCode>AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA=</HashCode>
+      <FileName>Model\User.cs</FileName>
+    </TypeIdentifier>
+  </Class>
+  <Class Name="DiplomMurtazin.Model.UserMetadata" Collapsed="true">
+    <Position X="76.5" Y="8.5" Width="1.5" />
+    <TypeIdentifier>
+      <HashCode>AAAAAAAAAAAAAAAAEAAAAAAAAAAAAAACAAAQAAAAAAA=</HashCode>
+      <FileName>Model\User.cs</FileName>
+    </TypeIdentifier>
+  </Class>
+  <Class Name="DiplomMurtazin.Properties.Resources" Collapsed="true">
+    <Position X="78.25" Y="5.5" Width="1.5" />
+    <TypeIdentifier>
+      <HashCode>AAAAAAAAAAAAAAAAAAABEAAAAQAAAAAAAAAAAAAAAIA=</HashCode>
+    </TypeIdentifier>
+  </Class>
+  <Class Name="DiplomMurtazin.Properties.Settings" Collapsed="true">
+    <Position X="80" Y="6.5" Width="1.5" />
+    <TypeIdentifier>
+      <HashCode>AAAAAAAAAAAAAAAAAAAAIAAAAAABAAAAAAAAAAAAAAA=</HashCode>
+    </TypeIdentifier>
+  </Class>
+  <Class Name="DiplomMurtazin.View.AdminAuthWindow" Collapsed="true" BaseTypeListCollapsed="true">
+    <Position X="66" Y="0.5" Width="1.5" />
+    <TypeIdentifier>
+      <HashCode>AAAAQAAAAAAAAAAAAAQAAAAAAAAAAAAAAACAAAAAAAA=</HashCode>
+      <FileName>View\AdminAuthWindow.xaml.cs</FileName>
+    </TypeIdentifier>
+    <Lollipop Position="0.2" Collapsed="true" />
+  </Class>
+  <Class Name="DiplomMurtazin.View.AuthorizationWindow" Collapsed="true" BaseTypeListCollapsed="true">
+    <Position X="74.75" Y="0.5" Width="1.5" />
+    <TypeIdentifier>
+      <HashCode>AIAAQCQAAAAAAAQAAAQAAAAAAAAAAAAAAEiAAAAAAAA=</HashCode>
+      <FileName>View\AuthorizationWindow.xaml.cs</FileName>
+    </TypeIdentifier>
+    <Lollipop Position="0.2" Collapsed="true" />
+  </Class>
+  <Class Name="DiplomMurtazin.View.DashboardPage" Collapsed="true" BaseTypeListCollapsed="true">
+    <Position X="83.5" Y="0.5" Width="1.5" />
+    <TypeIdentifier>
+      <HashCode>AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA=</HashCode>
+      <FileName>View\DashboardPage.xaml.cs</FileName>
+    </TypeIdentifier>
+    <Lollipop Position="0.2" Collapsed="true" />
+  </Class>
+  <Class Name="DiplomMurtazin.View.DefectiveProductsPage" Collapsed="true" BaseTypeListCollapsed="true">
+    <Position X="74.75" Y="1.5" Width="1.5" />
+    <TypeIdentifier>
+      <HashCode>AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA=</HashCode>
+      <FileName>View\DefectiveProductsPage.xaml.cs</FileName>
+    </TypeIdentifier>
+    <Lollipop Position="0.2" Collapsed="true" />
+  </Class>
+  <Class Name="DiplomMurtazin.View.EmployeeEditWindow" Collapsed="true" BaseTypeListCollapsed="true">
+    <Position X="76.5" Y="1.5" Width="1.5" />
+    <TypeIdentifier>
+      <HashCode>EAAAUAAAAAAAgAAQAAAAAgAQAAAAEAAAAAAAAAIAEAA=</HashCode>
+      <FileName>View\EmployeeEditWindow.xaml.cs</FileName>
+    </TypeIdentifier>
+    <Lollipop Position="0.2" Collapsed="true" />
+  </Class>
+  <Class Name="DiplomMurtazin.View.EmployeesPage" Collapsed="true" BaseTypeListCollapsed="true">
+    <Position X="80" Y="1.5" Width="1.5" />
+    <TypeIdentifier>
+      <HashCode>AABAAAAAAAAAAAAQAAAAAEAAAQAAAAAAAAAAAAAAAAA=</HashCode>
+      <FileName>View\EmployeesPage.xaml.cs</FileName>
+    </TypeIdentifier>
+    <Lollipop Position="0.2" Collapsed="true" />
+  </Class>
+  <Class Name="DiplomMurtazin.View.HistoryPage" Collapsed="true" BaseTypeListCollapsed="true">
+    <Position X="67.75" Y="2.5" Width="1.5" />
+    <TypeIdentifier>
+      <HashCode>AAAAAAAAAAAAAAAQAAAAAAAAAQAAAAAAAAAAAAAAAAA=</HashCode>
+      <FileName>View\HistoryPage.xaml.cs</FileName>
+    </TypeIdentifier>
+    <Lollipop Position="0.2" Collapsed="true" />
+  </Class>
+  <Class Name="DiplomMurtazin.View.ImportPreviewWindow" Collapsed="true" BaseTypeListCollapsed="true">
+    <Position X="73" Y="2.5" Width="1.5" />
+    <TypeIdentifier>
+      <HashCode>AAAAAQQAAAAAAAAQAAAAAAAAAEUAABAAAAIAAAAAAAA=</HashCode>
+      <FileName>View\ImportPreviewWindow.xaml.cs</FileName>
+    </TypeIdentifier>
+    <Lollipop Position="0.2" Collapsed="true" />
+  </Class>
+  <Class Name="DiplomMurtazin.View.ImportPreviewData" Collapsed="true">
+    <Position X="69.5" Y="2.5" Width="1.5" />
+    <TypeIdentifier>
+      <HashCode>AAAAAAQAAAAAAEAQAAAEAAAAAIQAAAAAAAAAAAAAAAA=</HashCode>
+      <FileName>View\ImportPreviewWindow.xaml.cs</FileName>
+    </TypeIdentifier>
+  </Class>
+  <Class Name="DiplomMurtazin.View.ImportPreviewRow" Collapsed="true">
+    <Position X="71.25" Y="2.5" Width="1.5" />
+    <TypeIdentifier>
+      <HashCode>IAgAAAAEAAEAAAAAAAAAAAAAAAAAAAAAAAAAgAAIAAA=</HashCode>
+      <FileName>View\ImportPreviewWindow.xaml.cs</FileName>
+    </TypeIdentifier>
+  </Class>
+  <Class Name="DiplomMurtazin.View.MainWindow" Collapsed="true" BaseTypeListCollapsed="true">
+    <Position X="71.25" Y="3.5" Width="1.5" />
+    <TypeIdentifier>
+      <HashCode>AAAAAAAAAAAAAAAQAAAAAAAAAAAAAAAAAAAAAAAAAAA=</HashCode>
+      <FileName>View\MainWindow.xaml.cs</FileName>
+    </TypeIdentifier>
+    <Lollipop Position="0.2" Collapsed="true" />
+  </Class>
+  <Class Name="DiplomMurtazin.View.NotificationsPage" Collapsed="true" BaseTypeListCollapsed="true">
+    <Position X="74.75" Y="3.5" Width="1.5" />
+    <TypeIdentifier>
+      <HashCode>AAAAAAAAAAAAAAAQAAAAAAAAAQAAAAAAAAAAAAAAAAA=</HashCode>
+      <FileName>View\NotificationsPage.xaml.cs</FileName>
+    </TypeIdentifier>
+    <Lollipop Position="0.2" Collapsed="true" />
+  </Class>
+  <Class Name="DiplomMurtazin.View.PriceHistoryWindow" Collapsed="true" BaseTypeListCollapsed="true">
+    <Position X="83.5" Y="3.5" Width="1.5" />
+    <TypeIdentifier>
+      <HashCode>AAAAAAAAAAAAAAIAAAAAAAAAAAAAAAAAAAAAAAAAAAA=</HashCode>
+      <FileName>View\PriceHistoryWindow.xaml.cs</FileName>
+    </TypeIdentifier>
+    <Lollipop Position="0.2" Collapsed="true" />
+  </Class>
+  <Class Name="DiplomMurtazin.View.PriceHistoryItem" Collapsed="true">
+    <Position X="81.75" Y="3.5" Width="1.5" />
+    <TypeIdentifier>
+      <HashCode>AAgAAAAAAgAAAAAAAAAAAAAAAAAACAAAAAACAAAAACA=</HashCode>
+      <FileName>View\PriceHistoryWindow.xaml.cs</FileName>
+    </TypeIdentifier>
+  </Class>
+  <Class Name="DiplomMurtazin.View.ProductEditWindow" Collapsed="true" BaseTypeListCollapsed="true">
+    <Position X="67.75" Y="4.5" Width="1.5" />
+    <TypeIdentifier>
+      <HashCode>AAAARAAAAAAAAAAQAAAACAAQECAAAAAAAAAACAAAEAA=</HashCode>
+      <FileName>View\ProductEditWindow.xaml.cs</FileName>
+    </TypeIdentifier>
+    <Lollipop Position="0.2" Collapsed="true" />
+  </Class>
+  <Class Name="DiplomMurtazin.View.ProductsPage" Collapsed="true" BaseTypeListCollapsed="true">
+    <Position X="80" Y="4.5" Width="1.5" />
+    <TypeIdentifier>
+      <HashCode>AAAAAAAAAAAAAAAQAAAAAAAAAQAAAAAAAAAAAAACAAA=</HashCode>
+      <FileName>View\ProductsPage.xaml.cs</FileName>
+    </TypeIdentifier>
+    <Lollipop Position="0.2" Collapsed="true" />
+  </Class>
+  <Class Name="DiplomMurtazin.View.ProductUnitHistoryPage" Collapsed="true" BaseTypeListCollapsed="true">
+    <Position X="83.5" Y="4.5" Width="1.5" />
+    <TypeIdentifier>
+      <HashCode>AAAAAAAAAAAAAAAQAAAAAAAAAQAAAAAAAAAAAAAAAAA=</HashCode>
+      <FileName>View\ProductUnitHistoryPage.xaml.cs</FileName>
+    </TypeIdentifier>
+    <Lollipop Position="0.2" Collapsed="true" />
+  </Class>
+  <Class Name="DiplomMurtazin.View.ReceiptWindow" Collapsed="true" BaseTypeListCollapsed="true">
+    <Position X="71.25" Y="5.5" Width="1.5" />
+    <TypeIdentifier>
+      <HashCode>EAAAAAAAAACAAAAAAAAAAAAAAAAAAIAAAEAAAAAQAIQ=</HashCode>
+      <FileName>View\ReceiptWindow.xaml.cs</FileName>
+    </TypeIdentifier>
+    <Lollipop Position="0.2" Collapsed="true" />
+  </Class>
+  <Class Name="DiplomMurtazin.View.RegistrationWindow" Collapsed="true" BaseTypeListCollapsed="true">
+    <Position X="73" Y="5.5" Width="1.5" />
+    <TypeIdentifier>
+      <HashCode>AJAAQDwAAAAABQQAAAQAAAAwACEAAAAAAAgAAAAAAAA=</HashCode>
+      <FileName>View\RegistrationWindow.xaml.cs</FileName>
+    </TypeIdentifier>
+    <Lollipop Position="0.2" Collapsed="true" />
+  </Class>
+  <Class Name="DiplomMurtazin.View.ReportsPage" Collapsed="true" BaseTypeListCollapsed="true">
+    <Position X="76.5" Y="5.5" Width="1.5" />
+    <TypeIdentifier>
+      <HashCode>AAAAAAAAAAAAAAAQAAAAAEAAAQAAAAAAAAAAAAAAAAA=</HashCode>
+      <FileName>View\ReportsPage.xaml.cs</FileName>
+    </TypeIdentifier>
+    <Lollipop Position="0.2" Collapsed="true" />
+  </Class>
+  <Class Name="DiplomMurtazin.View.ReturnProcessingPage" Collapsed="true" BaseTypeListCollapsed="true">
+    <Position X="80" Y="5.5" Width="1.5" />
+    <TypeIdentifier>
+      <HashCode>AAAAAAAAAAAAAAQQAAAAAAAAAQIAAAAAAAAAAAAAAAA=</HashCode>
+      <FileName>View\ReturnProcessingPage.xaml.cs</FileName>
+    </TypeIdentifier>
+    <Lollipop Position="0.2" Collapsed="true" />
+  </Class>
+  <Class Name="DiplomMurtazin.View.ReturnsWarrantyPage" Collapsed="true" BaseTypeListCollapsed="true">
+    <Position X="83.5" Y="5.5" Width="1.5" />
+    <TypeIdentifier>
+      <HashCode>AAAAAAAAAAAAAAAQAAAAAAAAAQAAAAAAAAAAAAAAAAA=</HashCode>
+      <FileName>View\ReturnsWarrantyPage.xaml.cs</FileName>
+    </TypeIdentifier>
+    <Lollipop Position="0.2" Collapsed="true" />
+  </Class>
+  <Class Name="DiplomMurtazin.View.SalesPage" Collapsed="true" BaseTypeListCollapsed="true">
+    <Position X="73" Y="6.5" Width="1.5" />
+    <TypeIdentifier>
+      <HashCode>AAAAAAAAAAAAIAAQAAAAAAAAAQAQAAAAAAAAAAAAAAA=</HashCode>
+      <FileName>View\SalesPage.xaml.cs</FileName>
+    </TypeIdentifier>
+    <Lollipop Position="0.2" Collapsed="true" />
+  </Class>
+  <Class Name="DiplomMurtazin.View.Torg12Page" Collapsed="true" BaseTypeListCollapsed="true">
+    <Position X="71.25" Y="8.5" Width="1.5" />
+    <TypeIdentifier>
+      <HashCode>AAAAAAAAAAAAAAAQAAAAAAAAAQgAAAAAAAAAAAAAAAA=</HashCode>
+      <FileName>View\Torg12Page.xaml.cs</FileName>
+    </TypeIdentifier>
+    <Lollipop Position="0.2" Collapsed="true" />
+  </Class>
+  <Class Name="DiplomMurtazin.View.UniversalEditPage" Collapsed="true" BaseTypeListCollapsed="true">
+    <Position X="74.75" Y="8.5" Width="1.5" />
+    <TypeIdentifier>
+      <HashCode>AAAAAAAAAAAAAAAQAAAAAEAEAQAAACAAAAAAAAAAAAA=</HashCode>
+      <FileName>View\UniversalEditPage.xaml.cs</FileName>
+    </TypeIdentifier>
+    <Lollipop Position="0.2" Collapsed="true" />
+  </Class>
+  <Class Name="DiplomMurtazin.View.ViewDisplayPage" Collapsed="true" BaseTypeListCollapsed="true">
+    <Position X="66" Y="9.5" Width="1.5" />
+    <TypeIdentifier>
+      <HashCode>AAAADACAAAAAAAAQAAAAAEAAAQAAAABAAAAAABAAAAA=</HashCode>
+      <FileName>View\ViewDisplayPage.xaml.cs</FileName>
+    </TypeIdentifier>
+    <Lollipop Position="0.2" Collapsed="true" />
+  </Class>
+  <Class Name="DiplomMurtazin.View.ViewSettingsPage" Collapsed="true" BaseTypeListCollapsed="true">
+    <Position X="67.75" Y="9.5" Width="1.5" />
+    <TypeIdentifier>
+      <HashCode>AAAAAAAAAAAAAAAQAAAAAEAAAQAAAAAAAAAAAAAAAEA=</HashCode>
+      <FileName>View\ViewSettingsPage.xaml.cs</FileName>
+    </TypeIdentifier>
+    <Lollipop Position="0.2" Collapsed="true" />
+  </Class>
+  <Class Name="DiplomMurtazin.ViewModel.AuthorizationViewModel" Collapsed="true">
+    <Position X="57.5" Y="2" Width="1.5" />
+    <TypeIdentifier>
+      <HashCode>AQAAAAQAAAAQAAAAIAAAAAAEAEAAAgAAAAAQIACAAAA=</HashCode>
+      <FileName>ViewModel\AuthorizationViewModel.cs</FileName>
+    </TypeIdentifier>
+  </Class>
+  <Class Name="DiplomMurtazin.ViewModel.BaseViewModel" Collapsed="true">
+    <Position X="50.75" Y="0.75" Width="1.5" />
+    <TypeIdentifier>
+      <HashCode>AAAAAAAAAAAABAAAIAAAAAAAgAAAAAAAAAAAAAAAAAA=</HashCode>
+      <FileName>ViewModel\BaseViewModel.cs</FileName>
+    </TypeIdentifier>
+    <Lollipop Position="0.2" />
+  </Class>
+  <Class Name="DiplomMurtazin.ViewModel.DashboardViewModel" Collapsed="true">
+    <Position X="52" Y="4.25" Width="1.5" />
+    <TypeIdentifier>
+      <HashCode>CEAAFADBAEAR/A4QgZAgzMlwAZIQEAgIOgCCAVEJIMI=</HashCode>
+      <FileName>ViewModel\DashboardViewModel.cs</FileName>
+    </TypeIdentifier>
+  </Class>
+  <Class Name="DiplomMurtazin.ViewModel.CashierStat" Collapsed="true">
+    <Position X="78.25" Y="0.5" Width="1.5" />
+    <TypeIdentifier>
+      <HashCode>AAAJAAAAAAAQAAQAAAAAAAAAAAAAAAAAAAAAAAAAAAA=</HashCode>
+      <FileName>ViewModel\DashboardViewModel.cs</FileName>
+    </TypeIdentifier>
+  </Class>
+  <Class Name="DiplomMurtazin.ViewModel.TopProductStat" Collapsed="true">
+    <Position X="78.25" Y="7.5" Width="1.5" />
+    <TypeIdentifier>
+      <HashCode>AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAQAAAAAAAAIAAA=</HashCode>
+      <FileName>ViewModel\DashboardViewModel.cs</FileName>
+    </TypeIdentifier>
+  </Class>
+  <Class Name="DiplomMurtazin.ViewModel.LowStockItem" Collapsed="true">
+    <Position X="69.5" Y="3.5" Width="1.5" />
+    <TypeIdentifier>
+      <HashCode>ABAAAAAAAAAAAAAAAABAAAAAAAECAAAAAAAAAAAIAAA=</HashCode>
+      <FileName>ViewModel\DashboardViewModel.cs</FileName>
+    </TypeIdentifier>
+  </Class>
+  <Class Name="DiplomMurtazin.ViewModel.DefectiveProductItem" Collapsed="true">
+    <Position X="52.75" Y="7.5" Width="1.5" />
+    <TypeIdentifier>
+      <HashCode>BAAgAAAEAAAAAAICAAAAAAAAAAAAAAAAAAAAgAAIAAA=</HashCode>
+      <FileName>ViewModel\DefectiveProductsViewModel.cs</FileName>
+    </TypeIdentifier>
+  </Class>
+  <Class Name="DiplomMurtazin.ViewModel.DefectiveProductsViewModel" Collapsed="true">
+    <Position X="59.5" Y="7.5" Width="1.5" />
+    <TypeIdentifier>
+      <HashCode>CAAAAAAAAAAQIAIEgQAAAAAgAAEEAAAAAAAAAEIAAAA=</HashCode>
+      <FileName>ViewModel\DefectiveProductsViewModel.cs</FileName>
+    </TypeIdentifier>
+  </Class>
+  <Class Name="DiplomMurtazin.ViewModel.EmployeeEditViewModel" Collapsed="true">
+    <Position X="39.5" Y="2" Width="1.5" />
+    <TypeIdentifier>
+      <HashCode>XQERAIAARqABAEAwAACAAAgGKBCAQIAAAAAAEEIUIAA=</HashCode>
+      <FileName>ViewModel\EmployeeEditViewModel.cs</FileName>
+    </TypeIdentifier>
+  </Class>
+  <Class Name="DiplomMurtazin.ViewModel.EmployeesViewModel" Collapsed="true">
+    <Position X="44" Y="2" Width="1.5" />
+    <TypeIdentifier>
+      <HashCode>mFkBAEAAAiIQRIFixIDIQAgBRAEEwJAAAAEBAIIEAAQ=</HashCode>
+      <FileName>ViewModel\EmployeesViewModel.cs</FileName>
+    </TypeIdentifier>
+  </Class>
+  <Class Name="DiplomMurtazin.ViewModel.HistoryItem" Collapsed="true">
+    <Position X="66" Y="2.5" Width="1.5" />
+    <TypeIdentifier>
+      <HashCode>EAIAAAAAAAABAAAAiAAAAAAAQAAAEAAAAAAAAABEAAA=</HashCode>
+      <FileName>ViewModel\HistoryViewModel.cs</FileName>
+    </TypeIdentifier>
+  </Class>
+  <Class Name="DiplomMurtazin.ViewModel.HistoryViewModel" Collapsed="true">
+    <Position X="53" Y="2" Width="1.5" />
+    <TypeIdentifier>
+      <HashCode>AAlAAAAAIIAQKCIAgAFEQgEiBAAEAEARCQDBgMIAAAA=</HashCode>
+      <FileName>ViewModel\HistoryViewModel.cs</FileName>
+    </TypeIdentifier>
+  </Class>
+  <Class Name="DiplomMurtazin.ViewModel.MainViewModel" Collapsed="true">
+    <Position X="59.75" Y="2" Width="1.5" />
+    <TypeIdentifier>
+      <HashCode>AAAYAAAAAICAAQAAAEAAAAIAAAAAAAAAAAAYAAAAAoA=</HashCode>
+      <FileName>ViewModel\MainViewModel.cs</FileName>
+    </TypeIdentifier>
+  </Class>
+  <Class Name="DiplomMurtazin.ViewModel.NotificationItem" Collapsed="true">
+    <Position X="73" Y="3.5" Width="1.5" />
+    <TypeIdentifier>
+      <HashCode>EAAAAAAAAAABAAAAAAAAAAAAQAAAEAAAAAAAAABAAAA=</HashCode>
+      <FileName>ViewModel\NotificationsViewModel.cs</FileName>
+    </TypeIdentifier>
+  </Class>
+  <Class Name="DiplomMurtazin.ViewModel.NotificationsViewModel" Collapsed="true">
+    <Position X="54.25" Y="4.25" Width="1.5" />
+    <TypeIdentifier>
+      <HashCode>AAgAAAABAAAACAAIgABAAgAIAAAAgAAAAAAAIIABAAA=</HashCode>
+      <FileName>ViewModel\NotificationsViewModel.cs</FileName>
+    </TypeIdentifier>
+  </Class>
+  <Class Name="DiplomMurtazin.ViewModel.ProductEditViewModel" Collapsed="true">
+    <Position X="58.75" Y="4.25" Width="1.5" />
+    <TypeIdentifier>
+      <HashCode>SQACBIAAQIAAWEAAAAAAAAAEAAAAEAAAAIAAAAAEAAA=</HashCode>
+      <FileName>ViewModel\ProductEditViewModel.cs</FileName>
+    </TypeIdentifier>
+  </Class>
+  <Class Name="DiplomMurtazin.ViewModel.ProductsViewModel" Collapsed="true">
+    <Position X="43.75" Y="7.5" Width="1.5" />
+    <TypeIdentifier>
+      <HashCode>hEsIAQABAFAQXAEyzIBKRAgAQAEMkBAIAAhBBIINBAQ=</HashCode>
+      <FileName>ViewModel\ProductsViewModel.cs</FileName>
+    </TypeIdentifier>
+  </Class>
+  <Class Name="DiplomMurtazin.ViewModel.ProductUnitHistoryViewModel" Collapsed="true">
+    <Position X="48.25" Y="7.5" Width="1.5" />
+    <TypeIdentifier>
+      <HashCode>IAoAAAAhAEAAAAAAAABMQAAARAAEAAAAEAAAAIIABAA=</HashCode>
+      <FileName>ViewModel\ProductUnitHistoryViewModel.cs</FileName>
+    </TypeIdentifier>
+  </Class>
+  <Class Name="DiplomMurtazin.ViewModel.RegistrationViewModel" Collapsed="true">
+    <Position X="55" Y="7.5" Width="1.5" />
+    <TypeIdentifier>
+      <HashCode>UQQAAAABAAAAAAAAEACAIQAEAAAAAACCIAARIAACIAA=</HashCode>
+      <FileName>ViewModel\RegistrationViewModel.cs</FileName>
+    </TypeIdentifier>
+  </Class>
+  <Class Name="DiplomMurtazin.ViewModel.ReturnReportItem" Collapsed="true">
+    <Position X="81.75" Y="5.5" Width="1.5" />
+    <TypeIdentifier>
+      <HashCode>BAAAAAAEAAgAAABAAAIAAgAAAAAAAAgAAAAEAAAIAAA=</HashCode>
+      <FileName>ViewModel\ReportsViewModel.cs</FileName>
+    </TypeIdentifier>
+  </Class>
+  <Class Name="DiplomMurtazin.ViewModel.Torg12ReportItem" Collapsed="true">
+    <Position X="73" Y="8.5" Width="1.5" />
+    <TypeIdentifier>
+      <HashCode>AAAgAAQEAAAQAAgQAAAAAEAAAAQAAAAAAgAAAAAAAAE=</HashCode>
+      <FileName>ViewModel\ReportsViewModel.cs</FileName>
+    </TypeIdentifier>
+  </Class>
+  <Class Name="DiplomMurtazin.ViewModel.ProductHistoryItem" Collapsed="true">
+    <Position X="69.5" Y="4.5" Width="1.5" />
+    <TypeIdentifier>
+      <HashCode>AAQAAAAAAQAgAAAAAAAAAAAEAAAAAAAAAAAAgABAAAA=</HashCode>
+      <FileName>ViewModel\ReportsViewModel.cs</FileName>
+    </TypeIdentifier>
+  </Class>
+  <Class Name="DiplomMurtazin.ViewModel.ProductSelectionItem" Collapsed="true">
+    <Position X="46.25" Y="2" Width="1.5" />
+    <TypeIdentifier>
+      <HashCode>EAAAAAAAAAAAEAAAAAAAAACAAAAAAAAAAAAAQAAIAAA=</HashCode>
+      <FileName>ViewModel\ReportsViewModel.cs</FileName>
+    </TypeIdentifier>
+  </Class>
+  <Class Name="DiplomMurtazin.ViewModel.ReportsViewModel" Collapsed="true">
+    <Position X="55.25" Y="2" Width="1.5" />
+    <TypeIdentifier>
+      <HashCode>UoiikgKmJcS3/UMQTMjAsBnkh4hmFVKI4BDFCcENHlI=</HashCode>
+      <FileName>ViewModel\ReportsViewModel.cs</FileName>
+    </TypeIdentifier>
+  </Class>
+  <Class Name="DiplomMurtazin.ViewModel.ReturnProcessingViewModel" Collapsed="true">
+    <Position X="43" Y="4.25" Width="1.5" />
+    <TypeIdentifier>
+      <HashCode>IAiAEAEgAAgAAIACpAJgAAgAQAAFAACBAAAAQoZAgIQ=</HashCode>
+      <FileName>ViewModel\ReturnProcessingViewModel.cs</FileName>
+    </TypeIdentifier>
+  </Class>
+  <Class Name="DiplomMurtazin.ViewModel.SoldUnitItem" Collapsed="true">
+    <Position X="47.5" Y="4.25" Width="1.5" />
+    <TypeIdentifier>
+      <HashCode>MAAAAAAEAAAAAAAACAAAAAAAgAAAAAAAAACEAABIEAA=</HashCode>
+      <FileName>ViewModel\ReturnsWarrantyViewModel.cs</FileName>
+    </TypeIdentifier>
+  </Class>
+  <Class Name="DiplomMurtazin.ViewModel.ProductTimelineItem" Collapsed="true">
+    <Position X="81.75" Y="4.5" Width="1.5" />
+    <TypeIdentifier>
+      <HashCode>AAAAAAAAAAAgAAAAAAAAAAAEAAAAAAAAAAAAAABAAAA=</HashCode>
+      <FileName>ViewModel\ReturnsWarrantyViewModel.cs</FileName>
+    </TypeIdentifier>
+  </Class>
+  <Class Name="DiplomMurtazin.ViewModel.ReturnsWarrantyViewModel" Collapsed="true">
+    <Position X="61" Y="4.25" Width="1.5" />
+    <TypeIdentifier>
+      <HashCode>ZAgAAQAmAAAAAgIgpIJAAgQARIQFAAARAAAgAoJAAAA=</HashCode>
+      <FileName>ViewModel\ReturnsWarrantyViewModel.cs</FileName>
+    </TypeIdentifier>
+  </Class>
+  <Class Name="DiplomMurtazin.ViewModel.SalesViewModel" Collapsed="true">
+    <Position X="46" Y="7.5" Width="1.5" />
+    <TypeIdentifier>
+      <HashCode>AgtMgAABBMoQ1AACQABARAIAQQQMEBQJiIKBIIICBAQ=</HashCode>
+      <FileName>ViewModel\SalesViewModel.cs</FileName>
+    </TypeIdentifier>
+  </Class>
+  <Class Name="DiplomMurtazin.ViewModel.SaleItemViewModel" Collapsed="true">
+    <Position X="50.5" Y="7.5" Width="1.5" />
+    <TypeIdentifier>
+      <HashCode>MAAACAAAAAAAAAABAAAAAAAAIAAAQAAAAAAAgAAIAAA=</HashCode>
+      <FileName>ViewModel\SalesViewModel.cs</FileName>
+    </TypeIdentifier>
+  </Class>
+  <Class Name="DiplomMurtazin.ViewModel.ProductWithStock" Collapsed="true">
+    <Position X="57.25" Y="7.5" Width="1.5" />
+    <TypeIdentifier>
+      <HashCode>MAAQAAACAAEgCAABAABAAAAAAAAAAAAAAAAAgAAJAAA=</HashCode>
+      <FileName>ViewModel\Torg12ViewModel.cs</FileName>
+    </TypeIdentifier>
+  </Class>
+  <Class Name="DiplomMurtazin.ViewModel.MissingImportItem" Collapsed="true">
+    <Position X="40.75" Y="4.25" Width="1.5" />
+    <TypeIdentifier>
+      <HashCode>ICAAAAAFAAAAAAAAAAAAAEAAAAAAAAAAAAAAgAAIAAA=</HashCode>
+      <FileName>ViewModel\Torg12ViewModel.cs</FileName>
+    </TypeIdentifier>
+  </Class>
+  <Class Name="DiplomMurtazin.ViewModel.Torg12LineItem" Collapsed="true">
+    <Position X="41.75" Y="2" Width="1.5" />
+    <TypeIdentifier>
+      <HashCode>MAAAAAAAAAEAAAABAAAAAAAAAAgAQAAAAAAAgAAIAAA=</HashCode>
+      <FileName>ViewModel\Torg12ViewModel.cs</FileName>
+    </TypeIdentifier>
+  </Class>
+  <Class Name="DiplomMurtazin.ViewModel.ImportSnapshot" Collapsed="true">
+    <Position X="74.75" Y="2.5" Width="1.5" />
+    <TypeIdentifier>
+      <HashCode>AAEBCCAAAAAAAAAAAAAAAAAIAQgAAAACAAAAAEAAAAA=</HashCode>
+      <FileName>ViewModel\Torg12ViewModel.cs</FileName>
+    </TypeIdentifier>
+  </Class>
+  <Class Name="DiplomMurtazin.ViewModel.Torg12ViewModel" Collapsed="true">
+    <Position X="48.5" Y="2" Width="1.5" />
+    <TypeIdentifier>
+      <HashCode>PAqCQJwRIEAQCAARoQBPQAAE0ZSEABBAAlACIIJABBs=</HashCode>
+      <FileName>ViewModel\Torg12ViewModel.cs</FileName>
+    </TypeIdentifier>
+  </Class>
+  <Class Name="DiplomMurtazin.ViewModel.TableInfo" Collapsed="true">
+    <Position X="74.75" Y="7.5" Width="1.5" />
+    <TypeIdentifier>
+      <HashCode>AAAAAAAAEAAAAAAAAAABAAQAQAAAAAAAAIAAAAIAAAA=</HashCode>
+      <FileName>ViewModel\UniversalEditViewModel.cs</FileName>
+    </TypeIdentifier>
+  </Class>
+  <Class Name="DiplomMurtazin.ViewModel.UniversalEditViewModel" Collapsed="true">
+    <Position X="45.25" Y="4.25" Width="1.5" />
+    <TypeIdentifier>
+      <HashCode>gAkEEAAAAIAABAAAxABAQAAAAAAEkJBAAIgBAsYEEAA=</HashCode>
+      <FileName>ViewModel\UniversalEditViewModel.cs</FileName>
+    </TypeIdentifier>
+  </Class>
+  <Class Name="DiplomMurtazin.ViewModel.ViewDisplayViewModel" Collapsed="true">
+    <Position X="49.75" Y="4.25" Width="1.5" />
+    <TypeIdentifier>
+      <HashCode>AAgECQIABAxGJAAB5ABAAAAQQBAIAJBAiAAAwIACQAA=</HashCode>
+      <FileName>ViewModel\ViewDisplayViewModel.cs</FileName>
+    </TypeIdentifier>
+  </Class>
+  <Class Name="DiplomMurtazin.ViewModel.TableColumnInfo" Collapsed="true">
+    <Position X="56.5" Y="4.25" Width="1.5" />
+    <TypeIdentifier>
+      <HashCode>AAAAMAAAAAAAEAABAAAAAASAIBAAABAAAAAAAAAAAAA=</HashCode>
+      <FileName>ViewModel\ViewSettingsViewModel.cs</FileName>
+    </TypeIdentifier>
+  </Class>
+  <Class Name="DiplomMurtazin.ViewModel.ViewSettingsViewModel" Collapsed="true">
+    <Position X="63.25" Y="4.25" Width="1.5" />
+    <TypeIdentifier>
+      <HashCode>AghGAQBQACwABINBRABSAQAIAAAAAFREgAxAQIgCECA=</HashCode>
+      <FileName>ViewModel\ViewSettingsViewModel.cs</FileName>
+    </TypeIdentifier>
+  </Class>
+  <Font Name="Segoe UI" Size="9" />
+</ClassDiagram>
