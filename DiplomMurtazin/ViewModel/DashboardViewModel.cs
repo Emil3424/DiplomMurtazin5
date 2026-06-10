@@ -6,6 +6,7 @@ using Microsoft.Win32;
 using PdfSharp.Drawing;
 using PdfSharp.Pdf;
 using System;
+using System.Collections.Generic;
 using System.Collections.ObjectModel;
 using System.Diagnostics;
 using System.IO;
@@ -496,7 +497,7 @@ namespace DiplomMurtazin.ViewModel
             System.Diagnostics.Process.Start(new System.Diagnostics.ProcessStartInfo(dialog.FileName) { UseShellExecute = true });
             MessageBox.Show($"Дашборд экспортирован в CSV: {dialog.FileName}", "Успех", MessageBoxButton.OK, MessageBoxImage.Information);
         }
-
+        public List<DateTime> SalesDates { get; set; }
         private void ExportDashboardToExcel()
         {
             var dialog = new SaveFileDialog
@@ -507,7 +508,6 @@ namespace DiplomMurtazin.ViewModel
             };
             if (dialog.ShowDialog() != true) return;
 
-            // Используем Interop для создания полноценного Excel-файла с графиком
             Excel.Application excel = null;
             Excel.Workbook workbook = null;
             Excel.Worksheet worksheet = null;
@@ -543,37 +543,41 @@ namespace DiplomMurtazin.ViewModel
                 row += 2;
 
                 // График продаж (данные)
-                worksheet.Cells[row, 1] = "ПРОДАЖИ ПО ДНЯМ";
-                row++;
-                worksheet.Cells[row, 1] = "Дата";
-                worksheet.Cells[row, 2] = "Сумма, ₽";
-                row++;
-                int dataStartRow = row;
-                for (int i = 0; i < SalesLabels.Length; i++)
+                if (SalesDates != null && SalesDates.Count > 0 && SalesSeries.Count > 0)
                 {
-                    worksheet.Cells[row, 1] = SalesLabels[i];
-                    var amount = ((LineSeries)SalesSeries[0]).Values[i];
-                    worksheet.Cells[row, 2] = amount;
+                    worksheet.Cells[row, 1] = "ПРОДАЖИ ПО ДНЯМ";
                     row++;
+                    worksheet.Cells[row, 1] = "Дата";
+                    worksheet.Cells[row, 2] = "Сумма, ₽";
+                    row++;
+                    int dataStartRow = row;
+                    var series = (LineSeries)SalesSeries[0];
+                    for (int i = 0; i < SalesDates.Count; i++)
+                    {
+                        worksheet.Cells[row, 1] = SalesDates[i];
+                        ((Excel.Range)worksheet.Cells[row, 1]).NumberFormat = "dd.MM";
+                        worksheet.Cells[row, 2] = series.Values[i];
+                        row++;
+                    }
+                    worksheet.Cells[row, 1] = "ИТОГО ЗА ПЕРИОД";
+                    worksheet.Cells[row, 2] = TotalRevenue;
+                    row += 2;
+
+                    // Создание графика на основе данных
+                    Excel.Range chartRange = worksheet.Range[worksheet.Cells[dataStartRow, 1], worksheet.Cells[row - 3, 2]];
+                    Excel.ChartObjects chartObjects = (Excel.ChartObjects)worksheet.ChartObjects();
+                    Excel.ChartObject chartObject = chartObjects.Add(100, 100, 400, 250);
+                    Excel.Chart chart = chartObject.Chart;
+                    chart.SetSourceData(chartRange);
+                    chart.ChartType = Excel.XlChartType.xlLine;
+                    chart.HasTitle = true;
+                    chart.ChartTitle.Text = "Продажи по дням";
+
+                    // Переместим график правее данных
+                    chartObject.Left = 450;
+                    chartObject.Top = 100;
+                    row += 10;
                 }
-                worksheet.Cells[row, 1] = "ИТОГО ЗА ПЕРИОД";
-                worksheet.Cells[row, 2] = TotalRevenue;
-                row += 2;
-
-                // Создание графика на основе данных
-                Excel.Range chartRange = worksheet.Range[worksheet.Cells[dataStartRow, 1], worksheet.Cells[row - 3, 2]];
-                Excel.ChartObjects chartObjects = (Excel.ChartObjects)worksheet.ChartObjects();
-                Excel.ChartObject chartObject = chartObjects.Add(100, 100, 400, 250);
-                Excel.Chart chart = chartObject.Chart;
-                chart.SetSourceData(chartRange);
-                chart.ChartType = Excel.XlChartType.xlLine;
-                chart.HasTitle = true;
-                chart.ChartTitle.Text = "Продажи по дням";
-
-                // Переместим график правее данных
-                chartObject.Left = 450;
-                chartObject.Top = 100;
-                row += 10;
 
                 // Статистика кассиров
                 worksheet.Cells[row, 1] = "СТАТИСТИКА КАССИРОВ";
@@ -776,6 +780,8 @@ namespace DiplomMurtazin.ViewModel
                         .Select(g => new { Date = g.Key, Amount = g.Sum(x => x.TotalAmount) })
                         .OrderBy(x => x.Date)
                         .ToList();
+                    SalesDates = salesByDay.Select(x => x.Date).ToList();
+                    SalesLabels = salesByDay.Select(x => x.Date.ToString("dd.MM")).ToArray();
                     SalesLabels = salesByDay.Select(x => x.Date.ToString("dd.MM")).ToArray();
                     SalesSeries.Clear();
                     SalesSeries.Add(new LineSeries

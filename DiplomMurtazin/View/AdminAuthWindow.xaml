@@ -21,12 +21,12 @@
 
         <StackPanel Grid.Row="1" Margin="0,20,0,0">
             <TextBlock Text="Логин:" FontWeight="SemiBold" Margin="0,0,0,5"/>
-            <TextBox x:Name="LoginTextBox" Style="{StaticResource RoundedTextBox}" Height="35"/>
+            <TextBox x:Name="LoginTextBox" Style="{StaticResource RoundedTextBox}" Height="42"/>
         </StackPanel>
 
         <StackPanel Grid.Row="2" Margin="0,15,0,0">
             <TextBlock Text="Пароль:" FontWeight="SemiBold" Margin="0,0,0,5"/>
-            <PasswordBox x:Name="PasswordBox" Style="{StaticResource RoundedPasswordBox}" Height="35"/>
+            <PasswordBox x:Name="PasswordBox" Style="{StaticResource RoundedPasswordBox}" Height="42"/>
         </StackPanel>
 
         <Border x:Name="ErrorBorder" Grid.Row="3" Margin="0,15,0,0"
