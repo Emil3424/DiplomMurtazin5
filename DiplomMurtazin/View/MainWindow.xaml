@@ -17,8 +17,19 @@
             <ColumnDefinition Width="*"/>
         </Grid.ColumnDefinitions>
 
+        <Border Background="#34495e" Padding="15" Margin="10,0,10,20" CornerRadius="5">
+            <StackPanel>
+                <TextBlock Text="Пользователь:" Foreground="#bdc3c7" FontSize="12"/>
+                <TextBlock Text="{Binding CurrentUser.Login}" 
+                               Foreground="White" 
+                               FontSize="16" 
+                               FontWeight="Bold"/>
+                <TextBlock Text="{Binding CurrentUser.Role}" 
+                               Foreground="#3498db" 
+                               FontSize="14"/>
+            </StackPanel>
+        </Border>
         <Border Grid.Column="0" Background="#2c3e50">
-            <!-- Добавляем ScrollViewer -->
             <ScrollViewer VerticalScrollBarVisibility="Auto">
                 <StackPanel>
                     <Border Background="#3498db" Padding="20" Margin="0,0,0,20">
@@ -28,111 +39,106 @@
                            Foreground="White"
                            HorizontalAlignment="Center"/>
                     </Border>
-
-                    <Border Background="#34495e" Padding="15" Margin="10,0,10,20" CornerRadius="5">
-                        <StackPanel>
-                            <TextBlock Text="Пользователь:" Foreground="#bdc3c7" FontSize="12"/>
-                            <TextBlock Text="{Binding CurrentUser.Login}" 
-                               Foreground="White" 
-                               FontSize="16" 
-                               FontWeight="Bold"/>
-                            <TextBlock Text="{Binding CurrentUser.Role}" 
-                               Foreground="#3498db" 
-                               FontSize="14"/>
-                        </StackPanel>
-                    </Border>
-
-                    <RadioButton Content=" ТОРГ-12" 
+                    <!-- ТОРГ-12 (Кладовщик, Администратор) -->
+        <RadioButton Content=" ТОРГ-12" 
                          Command="{Binding NavigateCommand}"
                          CommandParameter="Torg12"
+                         Visibility="{Binding IsTorg12Visible, Converter={StaticResource BooleanToVisibilityConverter}}"
                          Style="{StaticResource NavButtonStyle}"/>
-                    
-                    <!-- Кнопки навигации -->
 
-                    <RadioButton Content="Товары" 
+        <!-- Товары (Кладовщик, Администратор) -->
+        <RadioButton Content="Товары" 
                          Command="{Binding NavigateCommand}"
                          CommandParameter="Products"
                          IsChecked="{Binding IsProductsSelected}"
+                         Visibility="{Binding IsProductsVisible, Converter={StaticResource BooleanToVisibilityConverter}}"
                          Style="{StaticResource NavButtonStyle}"/>
 
-                    <RadioButton Content="Продажи" 
+        <!-- Продажи (Кассир, Администратор) -->
+        <RadioButton Content="Продажи" 
                          Command="{Binding NavigateCommand}"
                          CommandParameter="Sales"
                          IsChecked="{Binding IsSalesSelected}"
+                         Visibility="{Binding IsSalesVisible, Converter={StaticResource BooleanToVisibilityConverter}}"
                          Style="{StaticResource NavButtonStyle}"/>
 
-                    <RadioButton Content=" История индивидуального товара" 
-Command="{Binding NavigateCommand}"
-CommandParameter="ProductUnitHistory"
-Style="{StaticResource NavButtonStyle}"/>
+        <!-- История индивидуального товара (Кладовщик, Бухгалтер, Администратор) -->
+        <RadioButton Content=" История индивидуального товара" 
+                         Command="{Binding NavigateCommand}"
+                         CommandParameter="ProductUnitHistory"
+                         Visibility="{Binding IsProductUnitHistoryVisible, Converter={StaticResource BooleanToVisibilityConverter}}"
+                         Style="{StaticResource NavButtonStyle}"/>
 
-                    <RadioButton Content="История всех товаров" 
+        <!-- История всех товаров (Бухгалтер, Администратор) -->
+        <RadioButton Content="История всех товаров" 
                          Command="{Binding NavigateCommand}"
                          CommandParameter="History"
+                         Visibility="{Binding IsHistoryVisible, Converter={StaticResource BooleanToVisibilityConverter}}"
                          Style="{StaticResource NavButtonStyle}"/>
 
-                    <RadioButton Content="Дешборд"
+        <!-- Дашборд (Бухгалтер, Администратор) -->
+        <RadioButton Content="Дашборд"
                                  Command="{Binding NavigateCommand}"
                                  CommandParameter="Dashbord"
+                                 Visibility="{Binding IsDashboardVisible, Converter={StaticResource BooleanToVisibilityConverter}}"
                                  Style="{StaticResource NavButtonStyle}"/>
 
-
-                    <RadioButton Content=" Отчеты" 
+        <!-- Отчёты (Бухгалтер, Администратор) -->
+        <RadioButton Content=" Отчеты" 
                          Command="{Binding NavigateCommand}"
                          CommandParameter="Reports"
+                         Visibility="{Binding IsReportsVisible, Converter={StaticResource BooleanToVisibilityConverter}}"
                          Style="{StaticResource NavButtonStyle}"/>
 
-                    <RadioButton Content=" Оформление возврата" 
-             Command="{Binding NavigateCommand}"
-             CommandParameter="ReturnProcessing"
-             Style="{StaticResource NavButtonStyle}"/>
+        <!-- Оформление возврата (Кассир, Администратор) -->
+        <RadioButton Content=" Оформление возврата" 
+                         Command="{Binding NavigateCommand}"
+                         CommandParameter="ReturnProcessing"
+                         Visibility="{Binding IsReturnProcessingVisible, Converter={StaticResource BooleanToVisibilityConverter}}"
+                         Style="{StaticResource NavButtonStyle}"/>
 
+        <!-- Дефектные товары (Бухгалтер, Администратор) -->
+        <RadioButton Content="Дефектные товары" 
+                         Command="{Binding NavigateCommand}"
+                         CommandParameter="Defective Products"
+                         Visibility="{Binding IsDefectiveVisible, Converter={StaticResource BooleanToVisibilityConverter}}"
+                         Style="{StaticResource NavButtonStyle}"/>
 
-
-                    <RadioButton Content="Дефектные товары" 
-     Command="{Binding NavigateCommand}"
-     CommandParameter="Defective Products"
-     Style="{StaticResource NavButtonStyle}"/>
-
-
-                    <RadioButton Content=" Сотрудники" 
+        <!-- Сотрудники (только Администратор) -->
+        <RadioButton Content=" Сотрудники" 
                          Command="{Binding NavigateCommand}"
                          CommandParameter="Employees"
+                         Visibility="{Binding IsEmployeesVisible, Converter={StaticResource BooleanToVisibilityConverter}}"
                          Style="{StaticResource NavButtonStyle}"/>
-                    
-                    <RadioButton Content=" Все таблицы" 
+
+        <!-- Все таблицы (только Администратор) -->
+        <RadioButton Content=" Все таблицы" 
                          Command="{Binding NavigateCommand}"
                          CommandParameter="Universal"
-                         Style="{StaticResource NavButtonStyle}" Cursor="Hand"/>
+                         Visibility="{Binding IsUniversalVisible, Converter={StaticResource BooleanToVisibilityConverter}}"
+                         Style="{StaticResource NavButtonStyle}"/>
 
-
-
-
-
-                    <RadioButton Content="Представления" 
+        <!-- Представления (Бухгалтер, Администратор) -->
+        <RadioButton Content="Представления" 
                          Command="{Binding NavigateCommand}"
                          CommandParameter="ViewSettings"
+                         Visibility="{Binding IsViewSettingsVisible, Converter={StaticResource BooleanToVisibilityConverter}}"
                          Style="{StaticResource NavButtonStyle}"/>
 
-                    <RadioButton Content="Просмотр представлений" 
+        <!-- Просмотр представлений (Бухгалтер, Администратор) -->
+        <RadioButton Content="Просмотр представлений" 
                          Command="{Binding NavigateCommand}"
                          CommandParameter="ViewDisplay"
+                         Visibility="{Binding IsViewDisplayVisible, Converter={StaticResource BooleanToVisibilityConverter}}"
                          Style="{StaticResource NavButtonStyle}"/>
 
-                    <!--<RadioButton Content=" Уведомления" 
-                         Command="{Binding NavigateCommand}"
-                         CommandParameter="Notifications"
-                         Style="{StaticResource NavButtonStyle}"/>-->
+        <Separator Background="#7f8c8d" Margin="10"/>
 
-
-
-                    <Separator Background="#7f8c8d" Margin="10"/>
-
-                    <Button Content="🚪 Выйти" 
-                    Command="{Binding LogoutCommand}"
-                    Style="{StaticResource LogoutButtonStyle}"/>
-                </StackPanel>
-            </ScrollViewer>
+        <Button Content="🚪 Выйти" 
+                            Command="{Binding LogoutCommand}"
+                            Style="{StaticResource LogoutButtonStyle}"/>
+        </StackPanel>
+        </ScrollViewer>
         </Border>
 
         <Frame Grid.Column="1" 

@@ -16,13 +16,14 @@ namespace DiplomMurtazin
 using System;
 using System.Data.Entity;
 using System.Data.Entity.Infrastructure;
+    using DiplomMurtazin.Core;
 
 
 public partial class KPMurtazinEntities : DbContext
 {
     public KPMurtazinEntities()
-        : base("name=KPMurtazinEntities")
-    {
+                    : base(ConnectionManager.BuildEntityConnectionString())
+        {
 
     }
 
